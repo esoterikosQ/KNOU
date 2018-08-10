@@ -13,3 +13,13 @@ hist(r1000, br = c(0,1,2,3,4,5,6), main= '', freq=F, ylab='Relative Frequency', 
 hist(r10000, br = c(0,1,2,3,4,5,6), main= '', freq=F, ylab='Relative Frequency', ylim=c(0,0.5))
 hist(r100000, br = c(0,1,2,3,4,5,6), main= '', freq=F, ylab='Relative Frequency', ylim=c(0,0.5))
 
+# p.107 Ch4.8
+# 4.1
+library(distrEx)
+x = DiscreteDistribution(supp=c(1:6), prob=rep(1/6,6))
+plot(x)
+
+# 4.2
+E(x)
+var(x)
+sd(x)
