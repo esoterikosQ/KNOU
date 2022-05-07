@@ -1,0 +1,180 @@
+---
+title: '[Inference]mid-term'
+author: "Q"
+date: "4/10/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lawstat)
+```
+
+##1. 다음 관계를 적률생성함수를 이용하여 증명하고, R프로그램의 난수를 이용하여 히스토그램을 그리고 이를 바탕으로 관계가 성립함을 보이시오.
+
+###(1) $X \sim Bin(n,p)$의 확률표본이고 $np = \lambda$일 때, n이 커지면서 X의 분포를 구하시오. 
+
+```{r 1-1}
+par(mfrow=c(3,2))
+for (nn in c(4, 10, 20, 50, 100, 1000)){ #표본 크기가 4, 10, 20, 50, 100, 1000인 6가지 경우를 비교
+  XBar = rep(NA, 10000) # 10000번 표본평균 추출을 반복 시행
+  for (i in 1:10000) XBar[i] = mean(rbinom(n=nn, size=1, prob=0.5)) # Bin(n, p=0.5)를 가정
+  hist(XBar, main = paste('sample size:', nn), xlab='', freq=FALSE, col = 'steelblue') # 표본평균 추출 결과를 히스토그램으로 표현
+  lines(density(XBar), col = 2, lwd = 2) # 분포 추정치를 선 그래프로 표현
+}
+par(mfrow=c(1,1))
+```
+
+###(2) 서로 독립인 $X_1$과 $X_2$가 각각 $X_1 \sim Bin(4, 0.7)$이고 $X_2 \sim Ber(0.7)$일 때, $X_1 + X_2$의 분포를 구하시오.
+
+```{r 1-2}
+par(mfrow=c(1,2))
+
+n_add = 100000
+X1 = rbinom(n_add, 4, 0.7)
+X2 = rbinom(n_add, 1, 0.7)
+X_sum = (X1+X2)
+X_comp = rbinom(n_add, 5, 0.7)
+
+hist(X_sum, main = 'distribution of summation', xlab = '', freq = FALSE, col = 'steelblue', ylim=c(0,2.5))
+lines(density(X_sum), col=2, lwd=2)
+
+hist(X_comp, main = 'binomial distribution', xlab='', freq=FALSE, col='cadetblue1', ylim=c(0,2.5))
+lines(density(X_comp), col=2, lwd=2)
+
+mean(X_sum);var(X_sum)
+mean(X_comp);var(X_comp)
+
+par(mfrow=c(1,1))
+```
+ 
+##2. $X_i \sim N(\mu, \sigma^2)$의 확률표본일 때 다음 관계중 (1)~(3)을 증명하고, (1)~(4)에 대해 R프로그램의 난수(n=3을 가정)를 이용하여 히스토그램을 그리고, 이를 바탕으로 관계가 성립함을 보이시오.
+
+###(1)
+
+```{r 2-1}
+rs_avg <- function() {
+  X_avg = rep(NA, 10000)
+  for (i in 1:10000) {
+    X_avg[i] = mean(rnorm(n=3, mean=1, sd=1)) # 모평균이 1, 모분산이 1인 정규분포에서 추출한 n=3인 난수의 평균치
+  }
+  return(X_avg)
+}
+
+X_2_1 <- rs_avg()
+mean(X_2_1) # 평균은 1
+var(X_2_1) # 분산은 1/3
+
+X_comp <- rnorm(10000, 1, sqrt(1/3)) # 대조군 생성, 모평균 1, 모분산이 sqrt(1/3)인 정규분포에서 추출
+
+t.test(X_2_1, X_comp)
+
+```
+
+###(2)
+
+```{r 2-2}
+rs_var <- function() {
+  X_var <- rep(NA, 10000)
+  for (i in 1:10000) {
+    X_var[i] <- 2*var(rnorm(3, 1, 1)) # (n-1)S^2/σ^2, σ^2=1 이므로 별도로 표기하지 않음
+  }
+  return(X_var)
+}
+
+X_2_2 <- rs_var()
+X_comp <- rchisq(10000, 2) # 자유도가 2인 카이제곱분포로부터 추출한 n=10000인 대조군 생성
+
+paste('mean of S^2:', mean(X_2_2))
+paste('mean of comparison group:', mean(X_comp))
+paste('variance of S^2:', var(X_2_2))
+paste('variance of comparison group:', var(X_comp))
+
+# 두 집단을 대상으로 등분산 검정
+var.test(X_2_2, X_comp)
+
+# 두 집단을 대상으로 평균 검정
+t.test(X_2_2, X_comp)
+```
+
+###(3)
+
+```{r 2-3}
+rs_var2 <- function() {
+  X_var <- rep(NA, 10000)
+# 모평균 1, 모분산 1인 표준분포로부터 n=3인 확률변수 생성 후 표본분산을 구한 값을 확률변수로 갖는 집합 생성
+  for (i in 1:10000) X_var[i] <- var(rnorm(3,1,1))  
+  return(X_var)
+}
+
+s_2 <- rs_var2() 
+
+cov(X_2_1, s_2) # 독립성 검정을 위해 공분산 계산
+
+```
+
+###(4)
+
+```{r 2-4}
+
+X_z <- (rs_avg() - 1)/(sqrt(rs_var2())/(sqrt(3)))
+
+# 비교군으로 자유도가 2인 t 분포 생성
+X_comp <- rt(10000, 2)
+
+# 두 표본의 평균값 비교
+paste('mean of standardized X:', mean(X_z))
+paste('mean of comparison group:', mean(X_comp))
+
+# 평균값에 차이가 있는지를 t-test로 확인
+t.test(X_z, X_comp)
+
+# 자유도가 2인 t분포는 분산값이 무한대이므로 분산 검정으로는 두 표본의 동질성 여부를 확인할 수 없음
+var.test(X_z, X_comp)
+```
+
+
+##3번
+
+```{r 3}
+# 주어진 pdf를 기초로 하는 임의의 확률변수 추출함수 정의
+rs_Zn <- function(n){
+  X_i <- rep(NA, n) # Xi를 확률변수로 갖는 n=n 크기의 집합 생성
+  # y = exp(-(x-θ)) 를 pdf로 갖는 x값 도출을 위해 역함수값을 입력, y값을 0~1 사이의 임의의 변수로 생성
+  for ( i in 1:n ) X_i[i] <- 2 - log(runif(1, min=0, max=1))
+  X_1 <- min(X_i) # X(1) 값은 Xi 확률변수의 최소값
+  Z_n <- n*(X_1-2) # Zn은 X(1)을 주어진 함수에 대입한 결과값
+  return(Z_n)
+}
+
+
+par(mfrow=c(1,3))
+
+for (n in c(10, 100, 1000)){ 
+  Z_n <- rep(NA, n) # n개의 원소를 가지는 Zn 집합 생성
+  for (i in 1:n) Z_n[i] <- rs_Zn(n) # Zn의 각 원소는 확률변수 추출함수의 결과값
+  hist(Z_n, main = paste('sample size:', n), xlab='', freq=FALSE, col = 'steelblue') # 표본평균 추출 결과를 히스토그램으로 표현
+  lines(density(Z_n), col = 2, lwd = 2) # 분포 추정치를 선 그래프로 표현
+}
+par(mfrow = c(1,1))
+
+Z_comp <- rexp(n=100, rate=1) # 대조군으로 lambda = 1인 지수분포의 확률표본 생성
+
+# n=10인 경우 등분산검정과 모평균검정
+Z_10 <- rep(NA, 10)
+for (i in 1:10) Z_10[i] <- rs_Zn(i)
+var.test(Z_10, Z_comp)
+t.test(Z_10, Z_comp)
+
+# n=100인 경우 등분산검정과 모평균검정
+Z_100 <- rep(NA, 100)
+for (i in 1:100) Z_100[i] <- rs_Zn(i)
+var.test(Z_100, Z_comp)
+t.test(Z_100, Z_comp)
+
+# n=1000인 경우 등분산검정과 모평균검정
+Z_1000 <- rep(NA, 1000)
+for (i in 1:1000) Z_1000[i] <- rs_Zn(i)
+var.test(Z_1000, Z_comp)
+t.test(Z_100, Z_comp)
+```
