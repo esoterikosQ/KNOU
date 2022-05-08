@@ -2,28 +2,32 @@
 title: '[DAM]homework3'
 author: "Q"
 date: "5/7/2022"
-output: html_document
+output: word_document
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(survival)
+library(dplyr)
 library(ggplot2)
 library(ISwR)
 library(faraway)
+library(ellipse)
 ```
 
 ## 14.1 In the graft.vs.host data set, estimate the survival function for patients with or without GVHD. Test the hypothesis that the survival is the same in both groups. Extend the analysis by including the orther explanatory variables.
-
 
 ```{r 1}
 # import data
 data(graft.vs.host)
 attach(graft.vs.host)
 ```
-
+  
 ### GVHD 유병여부를 기준으로 누적한계추정법을 이용한 생존함수 추정
-
+  
 ```{r 1-1}
 # create a Surv object 
 surv.gvhd <- Surv(time, dead == 1)
@@ -32,61 +36,64 @@ surv.gvhd <- Surv(time, dead == 1)
 sc.gvhd <- survfit(surv.gvhd ~ gvhd)
 summary(sc.gvhd)
 ```
-
-생존함수 추정 결과, GVHD 유병 여부에 따라 생존함수가 크게 달라지는 것을 확인할 수 있다. GVHD 유병 그룹은 479일을 기준으로 생존확률이 0.353인 반면, GVHD가 없는 그룹은 465일을 기준으로 생존확률이 0.8이었다. 
-
+  
+생존함수 추정 결과, GVHD 유병 여부에 따라 생존함수가 크게 달라지는 것을 확인할 수 있다.
+GVHD 유병 그룹은 479일을 기준으로 생존확률이 0.353인 반면, GVHD가 없는 그룹은 465일을 기준으로 생존확률이 0.8이었다.
+  
 ```{r 1-2}
 # draw a survival curve plot
 plot(sc.gvhd, col = c('blue', 'red'), main = 'Surv. curv by GVHD', xlab = 'time(days)', ylab = 'survival rate')
 legend('bottomright', legend = c('no', 'yes'), lty = 1, col = 1:2, title = 'GVHD')
 ```
-
-각각의 생존함수를 그래프로 도출한 결과는 위와 같다. GVHD 유병그룹(빨간색)의 그래프는 무병그룹(파란색)의 생존함수 그래프와 비교해서 현저하게 생존확률이 낮아진 것을 확인할 수 있다.
+  
+각각의 생존함수를 그래프로 도출한 결과는 위와 같다.
+GVHD 유병그룹(빨간색)의 그래프는 무병그룹(파란색)의 생존함수 그래프와 비교해서 현저하게 생존확률이 낮아진 것을 확인할 수 있다.
 또한 유병그룹은 생존함수의 마지막 변곡지점도 479일로 무병그룹에 비해 장기 생존 데이터가 부족한 것을 알 수 있다.
-
+  
 ### 로그-순위 검정법을 이용하여 GVHD 변수의 설명력 검증
-
+  
 ```{r 1-3}
 survdiff(surv.gvhd ~ gvhd)
 ```
-
+  
 모수 $\rho=0$를 가정한 로그-순위 검정을 통해 GVHD 유병 여부를 통해 생존함수 일치성 여부를 검정한 결과는 위와 같다.
-
-두 그룹의 동질성을 가정하는 귀무가설을 검정한 결과 $\chi^2=6.6$으로, p값은 0.01로 95% 유의수준에서 귀무가설을 기각할 수 있는 것으로 확인되었다. 따라서 GVHD는 생존함수에 유의미한 영향을 주는 것을 알 수 있다.
-
-
+  
+두 그룹의 동질성을 가정하는 귀무가설을 검정한 결과 $\chi^2=6.6$으로, p값은 0.01로 95% 유의수준에서 귀무가설을 기각할 수 있는 것으로 확인되었다.
+  
+따라서 GVHD는 생존함수에 유의미한 영향을 주는 것을 알 수 있다.
+  
 ### 콕스 비례위험모형을 이용한 모형 확장
-
+  
 ```{r 1-4}
 # fitting a regression model
 sc.all <- coxph(surv.gvhd ~ gvhd + rcpage + donage + factor(type) + factor(preg))
 summary(sc.all)
 ```
-
+  
 콕스 비례위험모형을 이용하여 생존함수를 분석한 결과는 위와 같다.
-
+  
 검정의 대상이 된 회귀모형은 다음과 같다.
 $$
 S(t) = [S_0(t)]^{-exp(2.095x_1-0.016x_2+0.044x_3-0.337x_{4-1}-2.421x_{4-2}+0.343x_5)}
-$$
+$$ 
+  
 우도비 검정, Wald 검정, Score 검정 결과, 모두 p값이 0.002 이하의 작은 값으로 나와, GVHD 유병여부(gvhd, $x_1$), 수여자 나이(rcpage, $x_2$), 공여자 나이(donage, $x_3$), 백혈병 종류(type, $x_4$), 공여자 임신여부(preg, $x_5$) 중 최소 한 가지 이상은 생존함수에 영향을 미치는 것을 알 수 있다.
-
-각 변인별로는 GVHD 유병여부, 만성 골수성 백혈병(type=3)이 생존함수에 영향을 미치는 것으로 나타났고, 나머지 변인들은 p값이 유의미하지 않은 것으로 나타났다. 구체적으로 GVHD 유병그룹은 무병그룹보다 8.125배 위험도가 높고, 만성 골수성 백혈병이 발병한 경우 급성 골수성 백혈병이 발병한 경우에 비해 위험도가 0.08배 높은 것으로 나타났다.
-
-
-## 14.3 Fit Cox models to the stroke data with age and sex as predictors and with sex alone. Explain the difference. 
-
-
+  
+각 변인별로는 GVHD 유병여부, 만성 골수성 백혈병(type=3)이 생존함수에 영향을 미치는 것으로 나타났고, 나머지 변인들은 p값이 유의미하지 않은 것으로 나타났다.
+  
+구체적으로 GVHD 유병그룹은 무병그룹보다 8.125배 위험도가 높고, 만성 골수성 백혈병이 발병한 경우 급성 골수성 백혈병이 발병한 경우에 비해 위험도가 0.08배 높은 것으로 나타났다.
+  
+## 14.3 Fit Cox models to the stroke data with age and sex as predictors and with sex alone. Explain the difference.
+  
 ### 콕스 비례위험모형을 이용한 stroke 데이터 분석
-
+  
 ```{r 2}
 # import data
 detach(graft.vs.host)
 data(stroke)
 attach(stroke)
 ```
-
-
+  
 ```{r 2-1}
 # creating a survival data
 surv.str <- Surv(obsmonths, dead)
@@ -94,45 +101,427 @@ surv.str <- Surv(obsmonths, dead)
 sc.both <- coxph(surv.str ~ sex + age)
 # fitting a cox model with sex alone as a predictor
 sc.sex <- coxph(surv.str ~ sex)
-
 summary(sc.both)
 summary(sc.sex)
 ```
-
-설명변수를 달리하여 Cox 위험비례모형을 이용하여 생존함ㅁ수를 분석한 결과, 셩별만 고려한 모형의 경우 성별에 대한 유의수준이 매우 낮게 나왔으나, 성별과 연령을 모두 고려한 모형의 경우 오히려 성별에 대한 유의수준이 높아져 유의미하지 않게 나타나고 연령의 유의수준이 낮은 것으로 나타났다. 또한 성별만 고려한 모형에 비해 성별과 연령을 모두 고려한 모형의 c-index가 0.66으로 성별만 고려한 모형의 0.547보다 높게 나타나 모형 설명력이 높은 것으로 나타났다.
-
-이러한 검정 결과를 설명해줄 수 있는 가설은, 남성의 뇌졸중 발병 나이가 여성보다 어리다는 설명이다. 즉, 셩별과 뇌졸중 발병 나이 간 밀접한 관련이 있는 경우, 나이를 포함하지 않은 모형에서 성별이 유의미한 변수로 나타날 수 있다. 이러한 가설을 검정하기 위해 성별과 나이간의 상관관게를 검정한 결과는 다음과 같다. 
-
+  
+설명변수를 달리하여 Cox 위험비례모형을 이용하여 생존함ㅁ수를 분석한 결과, 셩별만 고려한 모형의 경우 성별에 대한 유의수준이 매우 낮게 나왔으나, 성별과 연령을 모두 고려한 모형의 경우 오히려 성별에 대한 유의수준이 높아져 유의미하지 않게 나타나고 연령의 유의수준이 낮은 것으로 나타났다.
+  
+또한 성별만 고려한 모형에 비해 성별과 연령을 모두 고려한 모형의 c-index가 0.66으로 성별만 고려한 모형의 0.547보다 높게 나타나 모형 설명력이 높은 것으로 나타났다.
+  
+이러한 검정 결과를 설명해줄 수 있는 가설은, 남성의 뇌졸중 발병 나이가 여성보다 어리다는 설명이다.
+  
+즉, 셩별과 뇌졸중 발병 나이 간 밀접한 관련이 있는 경우, 나이를 포함하지 않은 모형에서 성별이 유의미한 변수로 나타날 수 있다.
+이러한 가설을 검정하기 위해 성별과 나이간의 상관관게를 검정한 결과는 다음과 같다.
+  
 ```{r 2-2}
 cor.test(as.numeric(sex), age)
 ```
-
+  
 두 변수의 상관관계 검정 결과 상관계수는 0이 아닌 것으로 나타났고, 음의 상관관계가 있는 것으로 나타나 남성(sex==2)의 뇌졸중 발병 나이는 여성(sex==1)의 발병 나이보다 낮다는 것을 확인할 수 있다.
-
-
-##1-1. For the prostate data, fit a model with lpsa as the response and the other variables as predictors.
-
+  
+##3-1. For the prostate data, fit a model with lpsa as the response and the other variables as predictors.
+  
 ```{r 1}
 # import data
 detach(stroke)
 data(prostate)
+prostate$svi <- factor(prostate$svi, levels = 0:1, labels = c('no', 'yes'))
 summary(prostate)
+
+# fitting a regression model
+re.str <- lm(lpsa~., prostate)
+summary(re.str)
 ```
-
+  
 ###(a) Compute 90 and 95% CIs for the parameter associated with age. Using just these intervals, what could we have deduced about the p-value for age in the regression summary?
+  
+```{r 1-a}
+# result of the regression fitting
+re.str$coefficients['age']
+# 90% CI
+confint(re.str, 'age', level = 0.90)
+# 95% CI
+confint(re.str, 'age', level = 0.95)
+```
+  
+age(피험자 연령) 변수에 대한 선형회귀분석 결과 회귀계수 추정치는 -0.0196이다. 추정치의 90% 신뢰구간은 -0.0382~-0.001, 95% 신뢰구간은 -0.0418~0.0026이다.
+    
+귀무가설인 $\beta_3=0$을 기각하기 위해서는 추정구간이 0을 포함하고 있지 않아야 하는데, 90% 신뢰구간에서는 0을 포함하지 않는 반면, 95% 신뢰구간에서는 0을 포함하고 있다.
+  
+따라서 90% 신뢰수준에서 귀무가설인 $\beta_3=0$을 기각할 수 있지만, 95% 신뢰수준에서는 귀무가설을 기각할 수 없다.
 
-###(b) Compute and display a 95% joint confidence region for the parameters associated with age and Ibph. Plot the origin on this disply. The clocation of the origin on the display tells us the outcome of a certain hypothesis test. State that test and its outcome.
-
+이를 통해 $\beta_3$ 추정치의 p값은 0.1~0.05 구간에서 계산될 것으로 추측할 수 있고, 실제 선형회귀 결과 $\beta_3$의 p값은 0.0823으로 계산되었다.
+  
+###(b) Compute and display a 95% joint confidence region for the parameters associated with age and lbph. Plot the origin on this display. The location of the origin on the display tells us the outcome of a certain hypothesis test. State that test and its outcome.
+  
+```{r 1-b}
+# 95% CI coefficient of age and lbph
+confint(re.str, c('age', 'lbph'))
+```
+  
+95% 신뢰수준에서 age와 lbph(전립선 비대증 크기의 로그값)의 회귀계수 추정치는 위와 같다.
+  
+```{r 1-b-2}
+# plot the estimates point, the joint confidence region, and the origin
+plot(ellipse(re.str, c(4,5)), type = 'l', xlim=c(-0.1, 0.1)) # the joint confidence region
+points(0,0, col = 'blue') # the origin
+points(coef(re.str)[4], coef(re.str)[5], pch = 18, col = 'red') # the point of the estimates
+```
+  
+age와 lbph 변수의 회귀계수 추정치의 95% 신뢰구간을 2차원으로 도식한 그래프는 위와 같다. 두 변수의 회귀계수 추정치는 붉은색 점으로 표시했다.
+  
+회귀분석을 통해 검증하고자 하는 귀무가설은 $\beta_3 = \beta_4 = 0$으로, 이를 나타내는 원점은 파란색 점으로 표시했다.
+  
+그래프를 통해 95% 신뢰구간에서 파란색 점은 신뢰구간 내에 있는 것을 확인할 수 있다. 따라서, 귀무가설을 기각하지 못한다.
+  
 ###(c) Suppose a new patient with the following values arrives. Predict the lpsa for this patient along with an appropriate 95% CI.
+  
+문제에서 주어진 환자의 각종 측정값을 바탕으로 데이터를 입력한 값은 다음과 같다.
+  
+```{r 1-c}
+new.patient <- data.frame(lcavol = 1.44692, lweight = 3.62301, age = 65, lbph = 0.30010, svi = 'no', lcp = -0.79851, gleason = 7.00000, pgg45 = 15.00000)
+```
+  
+```{r 1-c-2}
+predict(re.str, new.patient, level = 0.95)
+```
+  
+입력치를 바탕으로 95% 신뢰수준에서 예측한 새 환자의 lpsa값은 2.389053이다.
+  
+##3-3. Using the teengamb data, fit a model with gamble as the response and the other variables as predictors.
+  
+```{r 3}
+# import data
+data(teengamb)
+teengamb$sex <- factor(teengamb$sex, levels = 0:1, labels = c('male', 'female'))
+summary(teengamb)
 
-
-
-##1-3. using the teengamb data, fit a model with gamble as the response and the other variables as predictors.
-
+# fitting a regression model
+re.tgm <- lm(gamble~., teengamb)
+summary(re.tgm)
+```
+  
 ###(a) Which variables are statistically significant?
-
+  
+위 선형회귀 적합이 전제로 하는 회귀모형은 다음과 같다.
+  
+$$
+y(gamble) = \beta_0 + \beta_1x_1(sex) + \beta_2x_2(status) + \beta_3x_3(income) + \beta_4x_4(verbal)
+$$
+  
+회귀모형을 통해 검증하고자 하는 귀무가설은 다음과 같다.
+  
+$$
+\beta_0 = \beta_1 = \beta_2 = \beta_3 = \beta_4 = 0
+$$
+  
+회귀분석 결과 전체 모형의 p값은 0.000001815로 매우 낮게 나타나, 95% 신뢰수준에서 귀무가설을 기각할 수 있다. 따라서 회귀계수 중 어느 하나는 0이 아닌 값을 가지는 것을 알 수 있다.
+  
+각 변수별로 살펴보면, 성별, 소득의 회귀계수 산출값의 p값이 95% 신뢰수준에서 통계적으로 유의미한 수준으로 나타났다. 나머지 변수들의 p값은 0.05를 초과했다.
+  
+따라서, 전체 모형으로 회귀분석한 결과, 성별과 소득수준만 회귀모형의 설명변수로 유의미한 것을 알 수 있다.  
+  
 ###(b) What interprtation should be given to the coefficient for sex?
+  
+전체 모형에서 성별의 회귀계수는 $\beta_1 = -22.118$로 나타났다.
+  
+이는 사회적 지위, 소득수준, 언어능력 평가점수가 동일한 경우, 여성 청소년이 남성 청소년에 비해 도박에 소모하는 비용이 22.118배 낮다는 의미로 해석할 수 있다. 
+  
 
 ###(c) Predict the amount that a male with average (given these data) status, income and verbal score would gamble along with an appropriate 95% CI. Repeat the prediction for a mail with maximal values(for this data) of status, income and verbal score. Which CI is wider and why is this result expected?
+  
+```{r 3-c}
+# average male
+avg.male <- data.frame(sex = 'male', status = mean(teengamb$status), income = mean(teengamb$income), verbal = mean(teengamb$verbal))
+# maximal male
+max.male <- data.frame(sex = 'male', status = max(teengamb$status), income = max(teengamb$income), verbal = max(teengamb$verbal))
+# prediction
+avg.male.pred <- predict(re.tgm, avg.male, interval = 'confidence', level = 0.95)
+max.male.pred <- predict(re.tgm, max.male, interval = 'confidence', level = 0.95)
 
+# result
+print(paste('The predicted expenditure on gambling for an average male is', round(avg.male.pred[1], 3),'pounds per year.'))
+print(paste('The 95% CI of the predicted expenditure of an average male is between', round(avg.male.pred[2], 3), 'and', round(avg.male.pred[3], 3), 'and the range is', round(avg.male.pred[3]-avg.male.pred[2], 3), '.'))
+print(paste('The predicted expenditure on gambling for a maximal male is', round(max.male.pred[1], 3),'pounds per year.'))
+print(paste('The 95% CI of the predicted expenditure of a maximal male is between', round(max.male.pred[2], 3), 'and', round(max.male.pred[3], 3), 'and the range is', round(max.male.pred[3]-max.male.pred[2], 3), '.'))
+```
+  
+회귀모형에 기반한 예측 결과, 평균 남성의 연간 도박 소비금액은 28.243파운드, 최대 남성의 소비금액은 71.308파운드로 나타났다. 평균 남성의 95% 신뢰구간은 18.919, 최대 남성의 95% 신뢰구간은 58.151로 나타났다.
+  
+두 예측치 신뢰구간에 차이가 나는 이유는, 신뢰구간의 계산 방식이 예측된 모수에 신뢰구간에 따른 오차를 가감하여 계산하는데, 가감하는 가중치가 설명변수의 크기에 비례하기 때문이다.
+  
+신뢰구간은 다음과 같이 산출된다.
+  
+$$
+\hat y \pm {t_{n-p}}^{(\alpha/2)} \hat \sigma \sqrt{1 + {x_0}^T{(\mathbf{X^T}\mathbf{X})}^{-1}x_0}
+$$
+  
+여기서 $x_0$값은 예측 대상의 각 변수값 행렬을 나타내는데, 평균 남성의 경우 사회적 지위, 소득, 언어능력 평가점수가 최대 남성보다 낮다. 따라서, 오차의 크기가 최대 남성보다 작고, 이는 95% 신뢰구간의 축소로 이어진다. 반대로 최대 남성은 오차가 커지기 때문에 95% 신뢰구간이 커진다.
+  
+이와 같은 신뢰구간의 차이는, 회귀모형을 이용한 예측의 한계를 잘 보여준다. 즉, 원 데이터의 자료 구간의 극단에 가까울수록 신뢰구간의 범위가 넓어져 예측치와 관측치 간 괴리가 발생할 가능성이 높아진다. 따라서, 회귀모형을 이용해서 설명변수에 따른 반응변수의 기대값을 예측하기 위해서는 원 데이터의 설명변수의 범위를 벗어나지 않는 범위 내에서 가급적 평균치에 가까운 데이터를 이용하는 것이 좋다는 점을 알 수 있다. 
+  
 ###(d) Fit a model with just income as a predictor and use an F-test to compare it to the full model.
+  
+```{r 3-d}
+# a regression model using only income
+re.tgm.inc <- lm(gamble~income, teengamb)
+summary(re.tgm.inc)
+```
+  
+소득만을 포함한 축소모형은 다음과 같다.
+$$
+y = \beta_0 + \beta_1x_1(income)
+$$
+  
+축소모형 회귀분석 결과, 모형 전체의 p값은 0.000003045로 95% 신뢰수준에서 귀무가설($\beta_1 = 0$)을 기각할 수 있는 것으로 확인되었다. 따라서, $\beta_1 = 5.520$으로 추정할 수 있으며, 소득수준은 청소년이 도박에 소비하는 비용을 설명할 수 있는 변수라는 것을 알 수 있다.
+  
+
+```{r 3-d-2}
+# redefine the full model
+re.tgm2 <- lm(gamble ~ income + sex + status + verbal, data = teengamb)
+# F-test btw the whole model and the income model
+anova(re.tgm.inc, re.tgm2)
+```
+  
+다음으로, 전체 모형과 소득수준 모형 간 동질성을 검정하기 위한 F검정 결과는 위와 같다.
+  
+소득수준 모형의 F값은 4.1338로, 자유도 3 수준에서 p값이 0.01177로, 95% 신뢰수준에서 귀무가설(전체 모형 = 소득수준 모형)을 기각할 수 있다. 즉, 소득수준 외에 성별, 사회적지위, 언어능력 평가점수 역시 청소년이 도박에 소비하는 비용을 설명할 수 있는 변수라는 의미이다. 이는 전체 모형의 잔차총합(21,624)이 축소 모형의 잔차총합(28,009)보다 작은 점에서도 확인할 수 있다. 
+
+
+##13-1 Using the teengamb data, model gamble as a response and the other variables as predictors. Take care to investigate the possibility of interations between sex and the other predictors. Interpret your final model.
+
+```{r 1}
+# import data
+data(teengamb)
+
+# fitting a model considering interaction
+re.tgm.int <- lm(gamble ~ sex + sex*status + sex*income + sex*verbal, teengamb)
+summary(re.tgm.int)
+```
+  
+teengamb 자료에서 성별(sex)과 다른 설명변수 간 교호작용을 고려한 회귀분석 결과는 위와 같다.
+  
+회귀분석을 통해 검증한 회귀모형
+$$
+y = \mathbf{\beta}\mathbf{X} + \epsilon
+$$
+  
+이고, 귀무가설은 $\beta = 0$이다. 단순회귀모형과 달리 교호작용을 고려한 경우, 설명변수의 매트릭스 $\mathbf{X}$의 성분이 아래와 같이 바뀐다.
+$$
+\mathbf{x}^T = (x_1, x_2, x_3, x_4, x_1 \times x_2, x_1 \times x_3, x_1 \times x_4  )
+$$
+  
+전체 모형 분석 결과, p값은 0.0000001수준 낮게 나와 95% 신뢰수준에서 귀무가설을 기각할 수 있다. 각 변수 중에서는 소득수준과 소득수준-성별의 교호작용 변수의 회귀계수만 통계적으로 유의미한 것으로 나타났다.
+  
+```{r 13-1-2}
+# seeking to simplify the model
+anova(re.tgm.int)
+```
+  
+모형의 단순화 가능성을 살펴보기 위해 전체 모형을 분산분석한 결과, 언어능력 평가점수의 경우 모형에 포함시키는 것과 포함시키지 않는 것이 동일하다는 가설을 기각할 수 없는 것으로 나타났다. 이 결과에 따라 교호작용 모형을 축소할 수 있다.
+
+```{r 13-1-3}
+# reduce the model excluding the non-significant variable and interactions
+re.tgm.int2 <- lm(gamble ~ sex + sex*status + sex*income, teengamb)
+anova(re.tgm.int2, re.tgm.int)
+anova(re.tgm.int2)
+summary(re.tgm.int2)
+```
+  
+축소 모형과 전체 모형을 비교하여 분산분석한 결과, p값은 0.4781로 두 모형 간 설명 가능한 잔차제곱합의 크기에는 유의미한 변화가 없는 것을 확인할 수 있다.
+  
+축소 모형을 분산분석한 결과, 교호작용을 포함한 모든 변수가 반응변수를 통게적으로 유의미하게 설명할 수 있는 것으로 나타나, F통계량을 근거로는 추가적인 모형 축소 필요성은 없는 것으로 나타났다.
+  
+모형을 축소한 결과, p값은 1.584e-07로 전체 모형의 1.06e-06보다 줄어든 반면, 조정 $R^2$값은 0.5623으로 전체 모형의 0.5569보다 오히려 증가하여 축소 모형이 전체 모형보다 설명력은 좋아진 것으로 나타났다. 다만, 사회적 지위의 회귀계수가 유의미하지 않은 것으로 나타나서, 추가적인 모형 축소 가능성을 검토할 필요가 있다.
+
+```{r 13-1-4}
+# test the possibility of a drop of any more explanatory variables
+re.tgm.intd <- lm(gamble ~ sex + income + status, teengamb)
+drop1(re.tgm.intd, test = 'F')
+```
+  
+F통계량을 기준으로 추가적인 모형 단순화 가능성을 진단한 결과, 교호작용을 고려하지 않은 모형의 경우 사회적 지위를 모형에 포함하는 것이 AIC와 F통계량을 기준으로 근거가 부족한 것으로 나타났다. 
+
+```{r 13-1-5}
+# drop status from explanatory variables
+re.tgm.int3 <- lm(gamble ~ income*sex, teengamb)
+anova(re.tgm.int3, re.tgm.int2)
+summary(re.tgm.int3)
+```
+  
+위 분석을 토대로, 소득수준과 성별 및 교호작용을 고려하여 회귀분석한 결과, 사회적 지위가 포함되어있는 모형과 비교했을 때에 잔차설명력에 통계적으로 유의미한 차이가 없는 것으로 나타났다.
+  
+소득수준과 성별 및 교호작용을 고려한 축소모형의 경우 p값은 2.451e-08로 전체모형 및 1차 축소모형보다 낮은 값을 보이고 있다. 조정 $R^2$값은 0.5568로 전체모형의 0.5569와는 유사하고, 1차 축소모형의 0.5623보다는 약간 낮은 것으로 나타났다. 모형 간의 이러한 차이는 모형의 경제성과 정확성 사이에서 취사선택할 수 있는 수준이라고 판단된다.
+
+```{r 13-1-6}
+# diagnostics of the final model
+opar <- par(mfrow=c(2,2), mex = 0.6, mar = c(4,4,3,2) + .3)
+plot(re.tgm.int3, which = 1:4)
+par(opar)
+```
+  
+모형진단 결과, 잔차의 정규성(residual v fitted), 반응변수 분포의 정규성(QQ plot), 등분산성(scale-location)을 모두 만족하는 것으로 나타났다. 다만, 24번과 39번 관측치의 경우 전체적인 모형에 영향을 줄 수 있는 이상관측치이기 때문에, 모형의 적합성을 검증하기 위해서 해당 관측치를 제외한 데이터로 재차 분석할 수 있다.
+  
+##13-3 Plot the ToothGrowth data with len as the response. Fit a linear model to the data and check for possible simplification. Display the fitted regression lines on top of the data.
+ 
+```{r 13-3}
+#. data import and fitting a full model
+data("ToothGrowth")
+re.tg.full <- lm(len ~ dose*supp, ToothGrowth)
+summary(re.tg.full)
+```
+  
+모든 변수를 포함한 전체 모형의 회귀식은 다음과 같다.
+$$
+y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 (x_1 \times x_2)
+$$
+  
+전체 모형에 대한 회귀분석 결과 p값은 6.521e-16으로 95% 신뢰수준에서 귀무가설 $\beta_i = 0$을 기각할 수 있는 것으로 나타났다. 
+
+```{r 13-3-2}
+# searching for the best model using AIC
+step(re.tg.full)
+anova(re.tg.full)
+```
+  
+모형 단순화 가능성을 진단하기 위해 후진소거법과 분산분석 결과, 전체 모형에 포함한 모든 변수가 반응변수 설명에 유의미하고 모형축소를 통한 AIC 감소 가능성도 없는 것으로 나타났다.
+
+```{r 13-3-3}
+# single term deletion test
+re.tg.drop <- lm(len ~ dose + supp, ToothGrowth)
+drop1(re.tg.drop, test = 'F')
+```
+  
+교호작용을 고려하지 않은 모형을 이용하여 분석한 결과로도 모든 설명변수가 반응변수를 유의미하게 설명할 수 있는 것으로 나타나, 추가적인 모형 축소는 통계적으로 근거가 없는 것으로 결론내릴 수 있다.
+
+```{r 13-3-4}
+# plotting the fitted regression lines on top of the data
+ToothGrowth %>% group_by(supp) %>%
+  ggplot(aes(x = dose, y = len)) +
+  geom_point(aes(col = supp, shape = supp)) +
+  geom_abline(intercept = 11.55, slope = 7.811, color = 'hotpink') +
+  geom_abline(intercept = 11.55-8.255, slope = 7.811+3.904, color = 'deepskyblue')
+```
+  
+한편, 회귀분석결과를 바탕으로 산출한 회귀선을 원데이터 그래프에 표현하면 위와 같다.
+  
+오렌지 주스의 형태로 비타민C를 공급받은 기니피그의 회귀직선은 $y = 11.55 + 7.811 \times dose$이고, 아스코르브산의 형태로 비타민C를 공급받은 그룹의 회귀직선은 $y = (11.55=8.255) + (7.811+3.904) \times dose$이다.
+  
+##13-5 Find a good model for the uswages data with wages as the response and all the other variables as predictors.
+
+```{r 13-5}
+# import data
+data(uswages)
+
+# fitting a full model
+usw.full <- lm(wage ~ ., uswages)
+summary(usw.full)
+```
+  
+uswages 데이터의 모든 변수를 포함하는 전체 모형을 기준으로 회귀분석을 한 결과, p값은 매우 작은 것으로 나타나 95% 신뢰수준에서 회귀계수가 0이라는 귀무가설을 기각하고, 하나 이상의 회귀계수가 유의미한 것으로 나타났다.
+  
+여타 설명변수와 달리 가변수의 처리부호화(treatment coding)를 통해 입력된 거주지역(ne, mw, so, we)의 경우 중서부를 제외하고는 95% 신뢰수준에서 회귀계수가 유의미하지 않은 것으로 나타났다. 
+
+```{r 13-5-1}
+# seeking to reduce the model
+anova(usw.full)
+usw.full2 <- lm(wage ~ educ + exper + race + smsa + pt + ne + mw + so, uswages)
+drop1(usw.full2, test = 'F')
+step(usw.full2)
+```
+  
+추가적인 모형단순화 가능성을 진단하기 위해 모형을 분산분석한 결과, 거주지역 변수를 모형에 포함하는 것이 적절한가라는 의문을 가질 수 있다. 비정규직(pt) 변수보다 거주지역 변수가 먼저 모형에 포함되기 때문에 F통계량이 과대평가될 가능성이 있기 때문이다. 이에, 변수 포함 순서를 바꿔 비정규직 변수를 거주지역 변수보다 먼저 포함시키는 모형을 분산분석한 결과, 예상대로 거주지역 변수의 F통계량이 95% 신뢰수준에서 유의미하지 않은 수준까지 떨어졌다.
+  
+하지만 아카이케 정보값을 기준으로 후진소거법을 이용하여 모형을 진단한 결과, 거주지역 변수를 포함하는 것이 AIC값을 최소로 유지할 수 있는 것으로 나타났다. 
+
+```{r 13-5-4}
+usw.red2 <- lm(wage ~ ne + mw + so, uswages)
+summary(usw.red2)
+```
+  
+마지막으로, 거주지역을 모형에 포함시키는 것이 유의미한가를 살펴보기 위해 거주지역만을 고려한 회귀모형을 분석한 결과, p값은 0.044로 95% 신뢰수준에서 유의미한 것으로 나타났다. 전체 모형에서는 거주지역보다 설명력이 높은 변수들의 존재로 인해 거주지역의 설명력이 통계적으로 유의미하지 않은 수준까지 떨어진 것으로 추측해볼 수 있다.
+  
+```{r 13-5-5}
+usw.red <- lm(wage ~ educ + exper + race + smsa + pt, uswages)
+anova(usw.red, usw.full2)
+drop1(usw.red, test = 'F')
+summary(usw.red)
+```
+
+거주지역을 제거한 축소 모형을 이용하여 회귀분석한 결과, p값은 동일하게 매우 낮게 나타나고, 조정 $R^2$값은 0.1957로 약간 낮아졌다. AIC는 전체 모형과 동일한 24,094이고, F통계량을 기준으로 인종 변수의 설명력이 높아진 것으로 나타났다. 
+  
+따라서, 거주지역 변수를 제외한 나머지 변수를 설명변수로 하는 축소 모형이 모형의 경제성과 타당성, 설명력을 고루 갖춘 회귀모형이라고 결론내릴 수 있다.
+
+```{r 13-5-a1}
+# preprocessing: transform race, smsa and pt into factors, and combine ne, mw, so we into one variable named area
+uswages$race <- factor(uswages$race, levels = 0:1, labels = c('white', 'black'))
+uswages$smsa <- factor(uswages$smsa, levels = 0:1, labels = c('out', 'in'))
+uswages$area <- uswages$ne*1 + uswages$mw*0 + uswages$we*2 + uswages$so*3
+uswages$area <- factor(uswages$area, levels = 0:3, labels = c('MW', 'NE', 'WE', 'SO'))
+uswages$pt <- factor(uswages$pt, levels = 0:1, labels = c('no', 'yes'))
+uswages <- uswages[,-rep(6:9)]
+
+# fitting a full model
+re.usw.full <- lm(wage ~ educ*exper*race*smsa*pt*area, uswages)
+summary(re.usw.full)
+```
+  
+한편, 거주지역이 소득수준에 영향을 미친다는 통념을 재차 검증하기 위해 거주지역 변수를 area로 통일시킨 후 교호작용을 고려하여 전체 모형을 분석한 결과는 위와 같다. 
+
+```{r 13-5-a2}
+# seeking for a possibility of dropping variables
+# 1st round: anova - remove non-significant variables by F-test
+anova(re.usw.full)
+# 1st round: reducing - choosing significant variables
+re.usw.red <- lm(wage ~ educ + exper + race + smsa + pt + area + educ:exper + exper:race + exper:smsa + educ:pt + exper:pt + exper:area + pt:area + educ:exper:pt + educ:race:pt + educ:smsa:pt + educ:pt:area + smsa:pt:area + educ:exper:smsa:pt + educ:exper:pt:area + educ:smsa:pt:area, uswages)
+# 1st round: anova btw the full and a reduced model to check whether the reduction can be justified
+anova(re.usw.red, re.usw.full)
+
+# 2nd round
+anova(re.usw.red) # exper:area, educ:race:pt, educ:smsa:pt, educ:exper:smsa:pt, educ:exper:pt:area
+re.usw.red2 <- lm(wage ~ educ + exper + race + smsa + pt + area + educ:exper + exper:race + exper:smsa + educ:pt + exper:pt + pt:area + educ:exper:pt + educ:pt:area + smsa:pt:area + educ:smsa:pt:area, uswages)
+anova(re.usw.red2, re.usw.red)
+
+# 3rd round
+anova(re.usw.red2) # - exper:race, pt:area, smsa:pt:area
+re.usw.red3 <- lm(wage ~ educ + exper + race + smsa + pt + area + educ:exper + exper:smsa + educ:pt + exper:pt + educ:exper:pt + educ:pt:area + educ:smsa:pt:area, uswages)
+anova(re.usw.red3, re.usw.red2) # red3 is not justified by F-test
+
+# 4th round
+# 4th round: choosing to add a variable to make reduction statistically persuasive
+re.usw.red4 <- lm(wage ~ educ + exper + race + smsa + pt + area + educ:exper + exper:smsa + educ:pt + exper:pt + educ:exper:pt + educ:pt:area + educ:smsa:pt:area + smsa:pt:area, uswages) # red2 + smsa:pt:area
+anova(re.usw.red4, re.usw.red2)
+
+# 5th round
+anova(re.usw.red4) # - educ:pt:area
+re.usw.red5 <- lm(wage ~ educ + exper + race + smsa + pt + area + educ:exper + exper:smsa + educ:pt + exper:pt + educ:exper:pt + educ:smsa:pt:area + smsa:pt:area, uswages)
+anova(re.usw.red5, re.usw.red4)
+
+# 6th round
+anova(re.usw.red5) # - smsa:pt:area
+re.usw.red6 <- lm(wage ~ educ + exper + race + smsa + pt + area + educ:exper + exper:smsa + educ:pt + exper:pt + educ:exper:pt + educ:smsa:pt:area, uswages)
+anova(re.usw.red6, re.usw.red5) # red6 is not justified
+
+# affirming red5
+drop1(re.usw.red5, test = 'F')
+step(re.usw.red5)
+summary(re.usw.red5)
+```
+  
+전체 모형이 지나치게 많은 교호작용 변수를 포함하고 있어, 분산분석 결과를 토대로 모형을 축소하고, 축소 전 모형과 축소 후 모형을 분산분석하여 축소의 타당성을 확인하는 과정을 반복하여 최종적으로 도출한 교호작용 고려 모형은 아래와 같다.
+
+```{r 13-5-a3}
+anova(re.usw.red5)
+summary(re.usw.red5)
+```
+  
+분산분석 결과 대도시+비정규직+거주지역 교호작용 변수 외 모든 변수는 통계적으로 유의미한 설명력이 있는 것으로 나타났고, 대도시+비정규직+거주지역 교호작용 변수를 제외하는 것이 축소 전 모형과 비교했을 때에 설명력에 통계적으로 유의미한 변동이 생기기 때문에 제거하지 않고 모형에 남겨두었다.
+  
+최종적인 회귀분석 결과, 단일 설명변수로는 근무이력(exper)의 상관계수가 통계적으로 유의미하지 않은 것으로 나타났다. 반면, 근무이력 변수는 대도시 거주여부, 비정규직, 교육수준 등과 교호작용을 고려했을 때에 유의미한 것으로 밝혀져, 단순히 근무이력이 길고 짧은 것만으로는 임금에 영향을 미치지 않으며, 근무이력이 임금에 긍정적인 영향을 줄 수 있는 다른 환경이나 개인적인 소질이 갖춰져야 임금에 영향을 미칠 수 있다고 해석할 수 있다.
+  
+지역별로는 북동부를 기준으로, 서부와 남부는 유의미한 지역간 임금격차가 있는 것으로 나타났고, 중서부는 북동부와 유의미한 임금격차가 없는 것으로 나타났다. 이는 지리적 근접성으로 인해 북동부와 중서부 간 임금격차가 다른 지역과 비교했을 때에 크지 않아서 나타난 결과로 해석할 수 있다.
+  
+교육기간(educ)은 개별변수와 교호작용 모두 통계적으로 유의미한 영향을 가지는 것으로 나타났다. 거의 모든 경우에 교육기간은 임금수준과 양의 상관관계에 있는데, 교육기간이 길고 비정규직에 있는 경우에는 오히려 임금수준에 부정적인 영향을 미치는 것으로 나타났다. 이는 단순근로자를 위주로 선발하는 비정규직의 경우 구인자가 고학력자를 기피하는 현상과 연결하여 설명할 수 있다. 반면, 동북부 지역에서는 대도시거주+비정규직인 경우에도 교육수준이 임금수준에 긍정적인 영향을 미치는 것으로 나타났고, 남부는 비도시 거주+비정규직인 경우에만 교육수준이 임금수준에 긍정적인 영향을 미치는 것으로 나타났다.
+  
+이처럼 교호작용을 고려하는 경우 원 데이터에 포함된 모든 변수가 임금 수준에 상이한 방식으로 영향을 미친다는 점을 확인할 수 있다.
