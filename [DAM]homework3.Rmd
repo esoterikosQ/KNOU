@@ -120,9 +120,9 @@ cor.test(as.numeric(sex), age)
   
 두 변수의 상관관계 검정 결과 상관계수는 0이 아닌 것으로 나타났고, 음의 상관관계가 있는 것으로 나타나 남성(sex==2)의 뇌졸중 발병 나이는 여성(sex==1)의 발병 나이보다 낮다는 것을 확인할 수 있다.
   
-##3-1. For the prostate data, fit a model with lpsa as the response and the other variables as predictors.
+## 3-1. For the prostate data, fit a model with lpsa as the response and the other variables as predictors.
   
-```{r 1}
+```{r 3-1}
 # import data
 detach(stroke)
 data(prostate)
@@ -136,7 +136,7 @@ summary(re.str)
   
 ###(a) Compute 90 and 95% CIs for the parameter associated with age. Using just these intervals, what could we have deduced about the p-value for age in the regression summary?
   
-```{r 1-a}
+```{r 3-1-a}
 # result of the regression fitting
 re.str$coefficients['age']
 # 90% CI
@@ -155,14 +155,14 @@ age(피험자 연령) 변수에 대한 선형회귀분석 결과 회귀계수 �
   
 ###(b) Compute and display a 95% joint confidence region for the parameters associated with age and lbph. Plot the origin on this display. The location of the origin on the display tells us the outcome of a certain hypothesis test. State that test and its outcome.
   
-```{r 1-b}
+```{r 3-1-b}
 # 95% CI coefficient of age and lbph
 confint(re.str, c('age', 'lbph'))
 ```
   
 95% 신뢰수준에서 age와 lbph(전립선 비대증 크기의 로그값)의 회귀계수 추정치는 위와 같다.
   
-```{r 1-b-2}
+```{r 3-1-b-2}
 # plot the estimates point, the joint confidence region, and the origin
 plot(ellipse(re.str, c(4,5)), type = 'l', xlim=c(-0.1, 0.1)) # the joint confidence region
 points(0,0, col = 'blue') # the origin
@@ -175,23 +175,23 @@ age와 lbph 변수의 회귀계수 추정치의 95% 신뢰구간을 2차원으�
   
 그래프를 통해 95% 신뢰구간에서 파란색 점은 신뢰구간 내에 있는 것을 확인할 수 있다. 따라서, 귀무가설을 기각하지 못한다.
   
-###(c) Suppose a new patient with the following values arrives. Predict the lpsa for this patient along with an appropriate 95% CI.
+### (c) Suppose a new patient with the following values arrives. Predict the lpsa for this patient along with an appropriate 95% CI.
   
 문제에서 주어진 환자의 각종 측정값을 바탕으로 데이터를 입력한 값은 다음과 같다.
   
-```{r 1-c}
+```{r 3-1-c}
 new.patient <- data.frame(lcavol = 1.44692, lweight = 3.62301, age = 65, lbph = 0.30010, svi = 'no', lcp = -0.79851, gleason = 7.00000, pgg45 = 15.00000)
 ```
   
-```{r 1-c-2}
+```{r 3-1-c-2}
 predict(re.str, new.patient, level = 0.95)
 ```
   
 입력치를 바탕으로 95% 신뢰수준에서 예측한 새 환자의 lpsa값은 2.389053이다.
   
-##3-3. Using the teengamb data, fit a model with gamble as the response and the other variables as predictors.
+## 3-3. Using the teengamb data, fit a model with gamble as the response and the other variables as predictors.
   
-```{r 3}
+```{r 3-3}
 # import data
 data(teengamb)
 teengamb$sex <- factor(teengamb$sex, levels = 0:1, labels = c('male', 'female'))
@@ -202,7 +202,7 @@ re.tgm <- lm(gamble~., teengamb)
 summary(re.tgm)
 ```
   
-###(a) Which variables are statistically significant?
+### (a) Which variables are statistically significant?
   
 위 선형회귀 적합이 전제로 하는 회귀모형은 다음과 같다.
   
@@ -222,16 +222,16 @@ $$
   
 따라서, 전체 모형으로 회귀분석한 결과, 성별과 소득수준만 회귀모형의 설명변수로 유의미한 것을 알 수 있다.  
   
-###(b) What interprtation should be given to the coefficient for sex?
+### (b) What interprtation should be given to the coefficient for sex?
   
 전체 모형에서 성별의 회귀계수는 $\beta_1 = -22.118$로 나타났다.
   
 이는 사회적 지위, 소득수준, 언어능력 평가점수가 동일한 경우, 여성 청소년이 남성 청소년에 비해 도박에 소모하는 비용이 22.118배 낮다는 의미로 해석할 수 있다. 
   
 
-###(c) Predict the amount that a male with average (given these data) status, income and verbal score would gamble along with an appropriate 95% CI. Repeat the prediction for a mail with maximal values(for this data) of status, income and verbal score. Which CI is wider and why is this result expected?
+### (c) Predict the amount that a male with average (given these data) status, income and verbal score would gamble along with an appropriate 95% CI. Repeat the prediction for a mail with maximal values(for this data) of status, income and verbal score. Which CI is wider and why is this result expected?
   
-```{r 3-c}
+```{r 3-3-c}
 # average male
 avg.male <- data.frame(sex = 'male', status = mean(teengamb$status), income = mean(teengamb$income), verbal = mean(teengamb$verbal))
 # maximal male
@@ -261,9 +261,9 @@ $$
   
 이와 같은 신뢰구간의 차이는, 회귀모형을 이용한 예측의 한계를 잘 보여준다. 즉, 원 데이터의 자료 구간의 극단에 가까울수록 신뢰구간의 범위가 넓어져 예측치와 관측치 간 괴리가 발생할 가능성이 높아진다. 따라서, 회귀모형을 이용해서 설명변수에 따른 반응변수의 기대값을 예측하기 위해서는 원 데이터의 설명변수의 범위를 벗어나지 않는 범위 내에서 가급적 평균치에 가까운 데이터를 이용하는 것이 좋다는 점을 알 수 있다. 
   
-###(d) Fit a model with just income as a predictor and use an F-test to compare it to the full model.
+### (d) Fit a model with just income as a predictor and use an F-test to compare it to the full model.
   
-```{r 3-d}
+```{r 3-3-d}
 # a regression model using only income
 re.tgm.inc <- lm(gamble~income, teengamb)
 summary(re.tgm.inc)
@@ -277,7 +277,7 @@ $$
 축소모형 회귀분석 결과, 모형 전체의 p값은 0.000003045로 95% 신뢰수준에서 귀무가설($\beta_1 = 0$)을 기각할 수 있는 것으로 확인되었다. 따라서, $\beta_1 = 5.520$으로 추정할 수 있으며, 소득수준은 청소년이 도박에 소비하는 비용을 설명할 수 있는 변수라는 것을 알 수 있다.
   
 
-```{r 3-d-2}
+```{r 3-3-d-2}
 # redefine the full model
 re.tgm2 <- lm(gamble ~ income + sex + status + verbal, data = teengamb)
 # F-test btw the whole model and the income model
@@ -289,9 +289,9 @@ anova(re.tgm.inc, re.tgm2)
 소득수준 모형의 F값은 4.1338로, 자유도 3 수준에서 p값이 0.01177로, 95% 신뢰수준에서 귀무가설(전체 모형 = 소득수준 모형)을 기각할 수 있다. 즉, 소득수준 외에 성별, 사회적지위, 언어능력 평가점수 역시 청소년이 도박에 소비하는 비용을 설명할 수 있는 변수라는 의미이다. 이는 전체 모형의 잔차총합(21,624)이 축소 모형의 잔차총합(28,009)보다 작은 점에서도 확인할 수 있다. 
 
 
-##13-1 Using the teengamb data, model gamble as a response and the other variables as predictors. Take care to investigate the possibility of interations between sex and the other predictors. Interpret your final model.
+## 13-1 Using the teengamb data, model gamble as a response and the other variables as predictors. Take care to investigate the possibility of interations between sex and the other predictors. Interpret your final model.
 
-```{r 1}
+```{r 13-1}
 # import data
 data(teengamb)
 
@@ -363,7 +363,7 @@ par(opar)
   
 모형진단 결과, 잔차의 정규성(residual v fitted), 반응변수 분포의 정규성(QQ plot), 등분산성(scale-location)을 모두 만족하는 것으로 나타났다. 다만, 24번과 39번 관측치의 경우 전체적인 모형에 영향을 줄 수 있는 이상관측치이기 때문에, 모형의 적합성을 검증하기 위해서 해당 관측치를 제외한 데이터로 재차 분석할 수 있다.
   
-##13-3 Plot the ToothGrowth data with len as the response. Fit a linear model to the data and check for possible simplification. Display the fitted regression lines on top of the data.
+## 13-3 Plot the ToothGrowth data with len as the response. Fit a linear model to the data and check for possible simplification. Display the fitted regression lines on top of the data.
  
 ```{r 13-3}
 #. data import and fitting a full model
@@ -408,7 +408,7 @@ ToothGrowth %>% group_by(supp) %>%
   
 오렌지 주스의 형태로 비타민C를 공급받은 기니피그의 회귀직선은 $y = 11.55 + 7.811 \times dose$이고, 아스코르브산의 형태로 비타민C를 공급받은 그룹의 회귀직선은 $y = (11.55=8.255) + (7.811+3.904) \times dose$이다.
   
-##13-5 Find a good model for the uswages data with wages as the response and all the other variables as predictors.
+## 13-5 Find a good model for the uswages data with wages as the response and all the other variables as predictors.
 
 ```{r 13-5}
 # import data
