@@ -1,0 +1,48 @@
+---
+title: '[Inference]Homework3'
+output: word_document
+date: '2022-05-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+### R을 이용하여 n = 100, 1000, 10000인 경우 p의 최대가능도추정치를 구하고, 각 경우에 $\overline X$와 비교하시오. 단, p은 0.8이라고 가정하시오.
+
+```{r}
+rs100 <- rbinom(100, 1, .8)
+rs1000 <- rbinom(1000, 1, .8)
+rs10000 <- rbinom(10000, 1, .8)
+
+ll <- function(data, p){return(sum(dbinom(data, 1, p, log = T)))}
+
+mle100 <- optim(.1, ll, data = rs100, method = 'BFGS', control = list(fnscale = -1))$par
+mle1000 <- optim(.1, ll, data = rs1000, method = 'BFGS', control = list(fnscale = -1))$par
+mle10000 <- optim(.1, ll, data = rs10000, method = 'BFGS', control = list(fnscale = -1))$par
+
+print(paste('MLE for 100 random samples is', round(mle100, 3), 'and the difference between the true parameter is', .8 - round(mle100, 3)))
+print(paste('MLE for 1000 random samples is', round(mle1000, 3), 'and the difference between the true parameter is', .8 - round(mle1000, 3)))
+print(paste('MLE for 10000 random samples is', round(mle10000, 3), 'and the difference between the true parameter is', .8 - round(mle10000, 3)))
+
+```
+
+
+### R코드를 이용하여 몬테카를로 적분으로 $\int{3}{1}e^xdx$의 값을 구하고, 실제 적분값과 비교하시오.
+
+```{r}
+integ <- tibble(
+  x = runif(10000000, 1, 3),
+  y = runif(10000000, 0, exp(1)^3),
+  within = ifelse(exp(1)^x>=y, 1, 0)
+)
+
+result <- sum(integ$within)/10000000 * (2*exp(1)^3)
+true.val <- exp(3) - exp(1)
+
+print(paste('Integral calculation with MC simulation is', round(result, 5)))
+print(paste('The true integral value is', round(true.val, 5)))
+print(paste('The difference between the two values is', round(true.val - result, 5)))
+
+```
