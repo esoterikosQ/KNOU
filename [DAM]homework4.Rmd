@@ -1,0 +1,897 @@
+---
+title: '[DAM]homework4'
+author: "Q"
+date: '2022-05-31'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(ggplot2)
+library(broom)
+library(car)
+library(MASS)
+library(leaps)
+```
+
+## Exercise 4-1
+
+#### Using the sat dataset, fit a model with the total SAT score as the response and expend, salary, ratio and takers as predictors. Perform regression diagnostics on this model to answer the following quesions. Display any plots that are relevent. Do not provide any plots about which you have nothing to say.
+
+```{r}
+# import data
+data(sat)
+
+# fit a regression model
+sat_re <- lm(total ~ expend + salary + ratio + takers, sat)
+summary(sat_re)
+
+# creating a data frame from the regression model class
+sat_df <- augment(sat_re)
+```
+
+##### (a) Check the constant variance assumption for the errors.
+
+```{r}
+ggplot(sat_df, aes(x = .fitted, y = .resid)) +
+  geom_point()+
+  labs(x = 'Fitted', y = 'Residuals') + 
+  geom_abline(slope = 0, intercept = 0, col = 'red')
+```
+
+잔차의 분포는 -50~50 구간에서 고르게 분포한 것으로 해석, 등분산성을 충족
+
+```{r}
+ncvTest(sat_re)
+```
+
+귀무가설을 기각할 수 없음 / 등분산성 충족
+
+
+```{r}
+# residual-explanary resopnse plot - expenditure
+ggplot(sat_df, aes(x = expend, y = .resid)) + 
+  geom_point()
+
+# residual-explanatory response plot - salary
+ggplot(sat_df, aes(x = salary, y = .resid)) + 
+  geom_point()
+
+# residual-explanatory response plot - ratio
+ggplot(sat_df, aes(x = ratio, y = .resid)) + 
+  geom_point()
+
+# residual-explanatory response plot - takers
+ggplot(sat_df, aes(x = takers, y = .resid)) + 
+  geom_point()
+```
+
+각 설명변수의 분산분포도 등분상성을 만족하는 것으로 보임
+
+
+
+##### (b) Check the normality assumption.
+
+```{r}
+qqnorm(residuals(sat_re), ylab = 'Residuals')
+qqline(residuals(sat_re))
+```
+
+정규분포 선상에서 벗어난 관측치들이 눈에 보임
+
+```{r}
+hist(residuals(sat_re))
+```
+히스토그램도 종형이 아닌 오른쪽 꼬리가 긴 모양
+
+```{r}
+# residual-explanatory response plot - takers
+ggplot(sat_df, aes(x = takers, y = .resid)) + 
+  geom_point()
+```
+
+takers 설명변수로 잔차 산점도를 그렸더니 정규성을 위배하는 것으로 의심 
+
+```{r}
+shapiro.test(residuals(sat_re))
+```
+
+하지만 샤피로 윌크스 검정 결과, 수치상으로는 나타나지 않음
+
+
+```{r}
+sat.sqr.re <- lm(total ~ expend + salary + ratio + takers + I(takers^2), sat)
+sat.sqr.df <- augment(sat.sqr.re)
+ggplot(sat.sqr.df, aes(x = takers, y = .resid)) + 
+  geom_point()
+```
+
+$takers^2$을 모형에 포함시켰더니 선형성이 사라짐
+
+```{r}
+qqnorm(residuals(sat.sqr.re), ylab = 'Residuals')
+qqline(residuals(sat.sqr.re))
+```
+
+qq플롯도 마찬가지
+
+```{r}
+boxcox(total ~ takers, data = sat, lambda = seq(-2, 2, 1/2), plotit = TRUE)
+sat.box.re <- lm(I(total^-2) ~ expend + salary + ratio + takers, sat)
+summary(sat.box.re)
+plot(x = fitted(sat.box.re), y = residuals(sat.box.re))
+```
+
+box-cox 변환으로도 접근이 가능
+
+box-cox 변환을 위한 로그가능도 함수를 그렸더니 -2 근처에서 최대값
+반응변수를 -2승 했더니 잔차산점도에서 비선형성이 사라짐
+
+
+##### (c) Check for large leverage points.
+
+```{r} 
+# calculate the sum of leverages
+sum(influence(sat_re)$hat)
+```
+
+레버리지 총합은 5, 모형의 전체 변수 수와 같음
+
+```{r}
+# drawing a halfnormal plot
+states <- row.names(sat)
+halfnorm(influence(sat_re)$hat, labs = states, ylab = 'Leverages')
+```
+
+half-normal plot을 그렸더니 유타와 캘리포니아가 가장 극단값 2개로 나옴
+
+```{r}
+# drawing a studentized residuals plot
+sat.re.sum <- summary(sat_re)
+stud <- residuals(sat_re)/(sat.re.sum$sig*sqrt(1-influence(sat_re)$hat))
+qqnorm(stud)
+abline(0, 1)
+```
+
+표준화 잔차 그림을 그렸더니 $x=y$축을 크게 벗어나는 값이 없는 거승로 확인
+레버리지가 과도하지 않은 것으로 해석
+
+##### (d) Check for outliers.
+
+```{r}
+# find the state with the biggest studentized residual
+rstudent(sat_re)[which.max(abs(rstudent(sat_re)))]
+```
+
+잔차가 가장 큰 관측치는 웨스트 버지니아로 잔차값은 -3.124
+
+```{r}
+qt(.05/(50*2), 45)
+```
+
+Bonferroni t-검정 기준에 따르면 특이점이 아님
+
+##### (e) Check for influential points.
+
+```{r}
+# check the cook's distance
+cook <- cooks.distance(sat_re)
+halfnorm(cook, 3, labs = states, ylab = 'Cook\'s distances')
+```
+
+쿡의 거리를 측정했더니 가장 큰 값이 유타, 다른 값보다 월등히 큼
+
+```{r}
+# remove utah and fit another model
+sat2.re <- lm(total ~ expend + salary + ratio + takers, sat, subset = (cook < max(cook)))
+summary(sat2.re)
+summary(sat_re)
+```
+
+유타를 제거하고 다시 모형을 적합했더니
+ratio의 p값이 95% 유의수준에서 기각역을 넘어섬
+Adjusted $R^2$값이 증가
+
+
+
+##### (f) Check the structure of the relationshiop between the predictors and the response.
+
+```{r}
+# added variable plots
+par(mfrow = c(2,2))
+for (i in 1:4){
+  # 1: expend, 2: ratio, 3: salary, 4:takers, 7: total
+  fac.name <- paste(colnames(sat)[i], '~.')
+  
+  ded <- sat[-c(i,5,6)]
+  fac <- sat[-c(5,6,7)]
+  
+  ded.res <- residuals(lm(total~., ded))
+  fac.res <- residuals(lm(fac.name, fac))
+
+  plotname <- paste(colnames(sat)[i], 'residuals')
+  plot(fac.res, ded.res, xlab = plotname, ylab = 'total residuals')
+  abline(0, coef(sat_re)[colnames(sat)[i]])
+}
+```
+
+추가변수 그림을 그린 결과, 각 설명변수와 반응변수 간에는 상관관계가 있는 것으로 해석
+
+
+```{r}
+# partial residual plots
+par(mfrow = c(2,2))
+prplot(sat_re, 1)
+prplot(sat_re, 3)
+prplot(sat_re, 2)
+prplot(sat_re, 4)
+```
+
+부분회귀 플롯의 경우도 마찬가지
+
+
+## Exercise 4-2
+
+#### Using the teengamb dataset, fit a model with gamble as the response and the other variables as predictos. Answer the questions posed in the previous question.
+
+
+```{r}
+# import data
+data(teengamb)
+
+# fit a regression model
+teen.re <- lm(gamble ~ ., teengamb)
+summary(teen.re)
+
+# creating a data frame from the regression model class
+teen.re.df <- augment(teen.re)
+```
+
+
+##### (a) Check the constant variance assumption for the errors.
+
+```{r}
+ggplot(teen.re.df, aes(x = .fitted, y = .resid)) +
+  geom_point()+
+  labs(x = 'Fitted', y = 'Residuals') + 
+  geom_abline(slope = 0, intercept = 0, col = 'red')
+```
+
+잔차의 분포가 일정하지 않은 것으로 보임
+적합값이 증가할수록 잔차가 증가하는 구조적인 오차가 있지 않을까?
+
+```{r}
+ncvTest(teen.re)
+```
+
+수치상으로 등분산성 가설 기각
+
+
+```{r}
+# residual-explanary resopnse plot - sex
+ggplot(teen.re.df, aes(x = sex, y = .resid)) + 
+  geom_point()
+
+# residual-explanary resopnse plot - status
+ggplot(teen.re.df, aes(x = status, y = .resid)) + 
+  geom_point()
+
+# residual-explanary resopnse plot - income
+ggplot(teen.re.df, aes(x = income, y = .resid)) + 
+  geom_point()
+
+# residual-explanary resopnse plot - verbal
+ggplot(teen.re.df, aes(x = verbal, y = .resid)) + 
+  geom_point()
+```
+
+income 변수에 체계적인 편향 문제가 있지 않을까?
+
+
+
+##### (b) Check the normality assumption.
+
+```{r}
+qqnorm(residuals(teen.re), ylab = 'Residuals')
+qqline(residuals(teen.re))
+```
+
+정규분포 선상에서 벗어난 관측치들이 눈에 보임
+
+```{r}
+hist(residuals(teen.re))
+```
+히스토그램도 종형이 아닌 오른쪽 꼬리가 긴 모양
+
+```{r}
+ggplot(teen.re.df, aes(x = .fitted, y = .resid)) +
+  geom_point()+
+  labs(x = 'Fitted', y = 'Residuals') + 
+  geom_abline(slope = 0, intercept = 0, col = 'red')
+```
+
+잔차 산포도 상으로 선형관계가 있는 것으로 추측
+
+
+```{r}
+shapiro.test(residuals(teen.re))
+```
+
+하지만 샤피로 윌크 검정 결과, 정규성 가정을 위배하는 것으로 확인
+
+
+##### (c) Check for large leverage points.
+
+```{r} 
+# calculate the sum of leverages
+sum(influence(teen.re)$hat)
+```
+
+레버리지 총합은 5, 모형의 전체 변수 수와 같음
+
+```{r}
+# drawing a halfnormal plot
+obs.num <- row.names(teengamb)
+halfnorm(influence(teen.re)$hat, 5, labs = obs.num, ylab = 'Leverages')
+```
+
+half-normal plot을 그렸더니 35, 42, 31, 33번이 추세선을 벗어난 것으로 보임
+
+```{r}
+# drawing a studentized residuals plot
+teen.re.sum <- summary(teen.re)
+teen.stud <- residuals(teen.re)/(teen.re.sum$sig*sqrt(1-influence(teen.re)$hat))
+qqnorm(teen.stud)
+abline(0, 1)
+```
+
+표준화 잔차 그림을 그렸더니 레버리지가 큰 값으로 인해 회귀모형에 영향이 있을 것으로 추측
+
+
+
+##### (d) Check for outliers.
+
+```{r}
+# find the state with the biggest studentized residual
+teen.rs <- rstudent(teen.re)
+teen.rs[which.max(abs(teen.rs))]
+
+```
+
+잔차가 가장 큰 관측치는 24번으로, 6.016
+
+```{r}
+qt(.05/(47*2), 42)
+```
+
+Bonferroni t-검정 기준에 따르면 특이점임
+
+
+```{r}
+# remove the outlier & check again
+teen.re2 <- lm(gamble~., teengamb, subset = ( teen.rs < max(teen.rs) ))
+teen.rs2 <- rstudent(teen.re2)
+teen.rs2[which.max(abs(teen.rs2))]
+
+# Bonferroni's correction
+qt(.05/(46*2), 41)
+```
+
+특이점을 제거한 후 다시 적합한 모형에서는 특이점이 발견되지 않음
+
+
+##### (e) Check for influential points.
+
+```{r}
+# check the cook's distance
+cook <- cooks.distance(teen.re)
+halfnorm(cook, 3, labs = obs.num, ylab = 'Cook\'s distances')
+```
+
+쿡의 거리를 측정했더니 특이점이었던 24번 관측치의 거리가 현저하게 큼
+
+
+```{r}
+# remove 24 and fit another model
+summary(teen.re2)
+summary(teen.re)
+```
+
+특이점이자 influential point인 24번 관측치를 제거하고 다시 모형을 적합했더니
+sex와 verbal의 coefficient가 낮아짐
+전체 모형의 p값이 더 낮아짐
+설명변수의 유의성에는 큰 변화가 없음
+Adjusted $R^2$값이 증가
+
+
+```{r}
+# normality test
+qqnorm(residuals(teen.re2), ylab = 'residuals')
+qqline(residuals(teen.re2))
+```
+
+normal qqplot상으로 추세선에서 벗어난 점들은 여전히 보임
+
+```{r}
+hist(residuals(teen.re2))
+```
+
+히스토그램은 약간 종형으로 변했으나 여전히 오른쪽 꼬리가 긴 모양
+
+```{r}
+shapiro.test(residuals(teen.re2))
+```
+
+샤피로 윌크스 검정 결과 정규성 가정을 기각할 수 없는 것으로 나옴
+전반적으로 잔차의 정규성 가정을 조금 더 충족하는 것으로 판단
+
+
+```{r}
+# leverage check
+teen.re2.sum <- summary(teen.re2)
+teen2.stud <- residuals(teen.re2)/(teen.re2.sum$sig*sqrt(1-influence(teen.re2)$hat))
+par(mfrow = c(1,2))
+qqnorm(teen2.stud, xlab = 'normal qqplot after removal')
+abline(0, 1)
+qqnorm(teen.stud, xlab = 'normal qqplot before removal')
+abline(0,1)
+```
+
+높은 레버리지를 갖는 관측치가 사라지면서 표준화잔차가 정규분포에 가까워짐 
+전반적으로 모형이 개선된 것으로 평가
+
+
+
+##### (f) Check the structure of the relationshiop between the predictors and the response.
+
+```{r}
+# added variable plots
+par(mfrow = c(2,2))
+for (i in 1:4){
+  # 1: sex, 2: status, 3: income, 4: verbal, 5: gamble
+  fac.name <- paste(colnames(teengamb)[i], '~.')
+  
+  ded <- teengamb[-i]
+  fac <- teengamb[-5]
+  
+  ded.res <- residuals(lm(gamble~., ded))
+  fac.res <- residuals(lm(fac.name, fac))
+
+  plotname <- paste(colnames(teengamb)[i], 'residuals')
+  plot(fac.res, ded.res, xlab = plotname, ylab = 'total residuals')
+  abline(0, coef(teen.re)[colnames(teengamb)[i]])
+}
+```
+
+추가변수 그림을 그린 결과, 각 설명변수와 반응변수 간에는 상관관계가 있는 것으로 해석
+
+
+```{r}
+# partial residual plots
+par(mfrow = c(2,2))
+prplot(teen.re, 1)
+prplot(teen.re, 2)
+prplot(teen.re, 3)
+prplot(teen.re, 4)
+```
+
+부분회귀 플롯의 경우도 마찬가지
+
+
+
+
+## Exercise 8-1
+
+#### Use the prostate data with lpsa as the response and the other variables as predictors. Implement the following variable selection methods to determine the "best" model:
+
+```{r}
+# import the data and fit a model
+data(prostate)
+pro.re <- lm(lpsa ~ ., prostate)
+summary(pro.re)
+```
+
+##### (a) Backward Elimination
+
+$\alpha_{cri} = 0.15$로 가정하고 p값을 기준으로 후진소거법을 실행하면
+
+```{r}
+summary(pro.re)
+```
+
+p값이 가장 큰 gleason을 제거한다.
+
+```{r}
+pro.re2 <- lm(lpsa ~ lcavol + lweight + svi + age + lbph + svi + pgg45, prostate)
+summary(pro.re2)
+```
+
+p값이 가장 큰 pgg45를 제거
+
+```{r}
+pro.re3 <- lm(lpsa ~ lcavol + lweight + svi + lbph + age, prostate)
+summary(pro.re3)
+```
+
+p값이 가장 큰 age를 제거
+
+```{r}
+pro.re4 <- lm(lpsa ~ lcavol + svi + lweight + lbph, prostate)
+summary(pro.re4)
+```
+
+모든 설명변수의 p값이 $\alpha_{cri} = 0.15$를 넘어섰으므로 소거를 중단하고 최종모형을 선택한다.
+
+선택한 최종모형은 다음과 같다.
+
+$$
+lpsa = 0.14554 + 0.54960\times lcavol + 0.71174 \times svi + 0.39088 \times lweight + 0.09009 \times lbph
+$$
+
+전체모형과 비교해서 p값은 차이가 없고, adjusted $R^2$는 증가
+
+```{r}
+anova(pro.re, pro.re4)
+```
+
+전체모형과 비교해서 두 모형의 잔차 간에 유의미한 차이는 없어, 설명력은 유의미한 차이가 없다고 해석이 가능.
+
+
+##### (b) AIC
+
+```{r}
+step(pro.re, direction = 'backward')
+```
+
+AIC를 기준으로 변수를 소거하는 방법도 후진소거법, 전진소거법, 단계적선택법 등이 있음. 하나씩 감소시키면서 어떤 변수를 소거해야 AIC가 최대치가 되는지를 기준으로 변수를 선택하는 방법
+
+주어진 문제에서는 후진소거법을 이용하여 step() 함수를 적용함.
+
+변수를 선택한 결과, 최초의 모형에서 gleason, lcp, pgg45 순서로 변수를 소거한 후 최종모형을 선택했다. 
+
+최종모형은 다음과 같다.
+
+$$
+lpsa = 0.951 + 0.56561\times lcavol + 0.42369\times lweight - 0.01489 \times age + 0.11184 \times lbph + 0.72095 \times svi
+$$
+
+```{r}
+pro.re.back <- lm(lpsa ~ lcavol + lweight + age + lbph + svi, prostate)
+summary(pro.re.back)
+anova(pro.re, pro.re.back)
+
+```
+
+전체모형과 축소모형 비교 결과, 
+전체모형과 회귀계수 간의 유의미한 차이는 없고,
+adjusted $R^2$값은 증가,
+소거한 설명변수는 전체모형에서 유의미하지 않은 회귀계수를 가진 변수,
+단, 전체모형보다 age의 p값이 커져 유의미하지 않은 수준이 됨
+
+
+##### (c) Adjusted $R^2$
+
+```{r}
+# adjusted R^2 plot
+pro.adjr <- regsubsets(lpsa ~ . , prostate)
+(rs <- summary(pro.adjr))
+plot(2:9, rs$adjr2, xlab = 'No. of Parameters', ylab = 'Adjusted R-square')
+```
+
+설명변수가 8개일 때에 가장 adjusted $R^2$값이 가장 크다는 것을 확인할 수 있다.
+
+```{r}
+# checkout outliers and influential points
+h <- influence(pro.re)$hat
+head(rev(sort(h)))
+```
+
+이상치의 영향력을 제거한 경우에도 결과가 같은지를 확인하기 위해 influence를 기준으로 정렬했을 때에 32번 관측치가 다른 관측치에 비해 높은 값을 갖는 것을 확인할 수 있다.
+
+```{r}
+prostate.infl <- prostate[-32]
+pro.adjr2 <- regsubsets(lpsa ~ ., prostate.infl)
+rs2 <- summary(pro.adjr2)
+rs2$which[which.max(rs$adjr),]
+rs$which[which.max(rs$adjr),]
+```
+
+32번 관측치를 제거한 것과 그렇지 않은 모형 간에 adjusted $R^2$를 최대로 하는 모형 간의 차이는 없다는 것을 확인할 수 있다.
+
+```{r}
+stripchart(data.frame(scale(prostate)), vertical = T, method = 'jitter')
+which.max(prostate$lweight)
+```
+
+설명변수 변환 여부를 위해 스트립차트를 그린 결과, lweight에 이상치가 있는 것을 확인할 수 있다.
+
+이상치는 32번 관측치로, 모형에 영향이 없다는 점이 확인되었다.
+
+따라서 adjusted $R^2$를 기준으로 선택한 최적 모형은 다음과 같다.
+
+```{r}
+pro.adjr.re <- lm(lpsa ~ lcavol + lweight + age + lbph + svi + lcp + pgg45, prostate)
+summary(pro.adjr.re)
+```
+
+전체모형과 비교했을 때에,
+P값에는 차이가 없고, adjusted $R^2$값은 약간 증가했다.
+설명변수의 유의수준에는 가시적인 변화가 없었다.
+
+##### (d) Mallows $C_p$
+
+
+```{r}
+rs
+plot(2:9, rs$cp, xlab = 'No. of parameters', ylab = 'cp statistics')
+abline(0, 1)
+```
+$C_p$ 그림을 그린 결과, 설명변수가 6개~8개 사이에 있을 때에 $C_p$값보다 설명변수의 크기가 작은 것을 알 수 있다. 
+
+따라서 설명변수가 6개인 모형이 $C_p$값을 기준으로 했을 때에 최적의 모형이라는 것을 알 수 있으며, 이때 선택한 변수는 lcavol, lweight, age, lbph, svi, pgg45이다.
+
+해당 변수를 설명변수로 하는 회귀모형은 다음과 같다.
+
+```{r}
+pro.cp <- lm(lpsa ~ lcavol + lweight + age + lbph + svi + pgg45, prostate)
+anova(pro.re, pro.cp)
+summary(pro.cp)
+```
+
+축소모형은 잔차제곱합의 크기가 전체모형과 유의미한 차이를 보이지 않고 있다.
+
+전체모형과 비교했을 때에 adjusted $R^2$값은 약간 증가했고, age 변수의 p값이 90% 유의수준에서 유의미하지 않은 수준까지 상승했다.
+
+## Exercise 8-5
+
+#### Fit a linear model to the stackloss data with stack.loss as the predictor and the other variables as predictors. Simplify the model if possible. Check the model for outliers and influential points. Now return to the full model, determine whether there are any outliers or influential points, eliminate them and then repeat the variable selection procedures. 
+
+```{r}
+# import data and fit the full model
+data(stackloss)
+stack.re <- lm(stack.loss ~ ., stackloss)
+
+# simplify the model by eliminating explanatory variables with backward method maximizing AIC
+step(stack.re)
+```
+
+AIC를 기준으로 후진소거법을 이용하여 변수를 선택한 결과 Air.Conc. 변수가 탈락하고 최종모형은
+
+$$
+stack.loss = -50.3588 + 0.6712 \times Air.Flow + 1.2954 \times Water.Temp
+$$
+가 된다.
+
+```{r}
+stack.rs <- regsubsets(stack.loss ~ ., stackloss)
+(stack.rs.sum <- summary(stack.rs))
+par(mfrow = c(1,2))
+plot(2:4, stack.rs.sum$cp, xlab = 'No. of parameters' ,ylab = 'cp statistics')
+abline(0,1)
+plot(2:4, stack.rs.sum$adjr2, xlab = 'No. of parameters' ,ylab = 'adj. R-square statistics')
+```
+
+$C_p$ 통계량과 조정$R^2$를 기준으로 변수가 2개인 경우와 3개인 경우 큰 차이는 없는 것으로 확인
+
+```{r}
+summary(stack.re)
+```
+
+p값을 기준으로 후진소거한 경우, Acid.Conc. 변수를 제거
+
+따라서, p값 기준 후진소거법과 AIC 기준에 따라 설명변수 2개 모형을 채택하고, 설명변수로 Air.Flow와 Water.Temp를 선택.
+
+
+```{r}
+# finding anormaly
+stack.step.re <- lm(stack.loss ~ Air.Flow + Water.Temp, stackloss)
+plot(stack.step.re)
+```
+
+축소모형 진단 결과, 잔차산점도, 분위수대조표, scale-location 그림, 쿡의 거리 등으로 볼 때에 21번 관측치가 이상치인 것으로 확인된다.
+
+```{r}
+stack.step.stud <- rstudent(stack.step.re)
+stack.step.stud[which.max(abs(stack.step.stud))]
+qt(.05/(21*2), 18)
+```
+
+Bonferroni's correction에 따르면 21번 관측치는 특이점이 아니다.
+
+```{r}
+obs.num <- rownames(stackloss)
+stack.step.cook <- cooks.distance(stack.step.re)
+halfnorm(stack.step.cook, 3, labs = obs.num, ylab = 'Cook\'s distances')
+```
+
+쿡의 거리가 현저하게 높아 영향치라고 해석할 수 있음
+
+
+```{r}
+# check anomaly on the full model
+plot(stack.re)
+```
+
+전체모형과 유사하게 21번 관측치가 이상치인지 의심
+
+```{r}
+stack.stud <- rstudent(stack.re)
+stack.stud[which.max(abs(stack.stud))]
+qt(.05/(21*2), 18)
+```
+
+Bonferroni's correction에 따르면 전체모형에서도 특이점은 아님
+
+```{r}
+stack.cook <- cooks.distance(stack.re)
+halfnorm(stack.cook, 3, labs = obs.num, ylab = 'Cook\'s distances')
+```
+
+쿡의 거리도 현저하게 크기는 하지만, 축소모형보다는 작음
+한편 3번 관측치의 쿡의 거리가 줄어들고 1번 관측치의 쿡의 거리가 커지는 등 세부 수치상에 변화가 관측
+
+```{r}
+# remove obs 21
+stackloss2 <- stackloss[-21,]
+stack.re2 <- lm(stack.loss ~., stackloss2)
+```
+
+
+```{r}
+# p-value backward elimination
+summary(stack.re2)
+```
+
+```{r}
+summary(lm(stack.loss ~ Air.Flow + Water.Temp, stackloss2))
+```
+
+p-value 후진소거법에 따라 Acid.Conc 변수를 제거
+
+```{r}
+step(stack.re2)
+```
+
+AIC에 따라 후진소거법을 적용한 결과 Acid.Conc 변수를 제거
+
+```{r}
+a <- regsubsets(stack.loss ~ ., stackloss)
+(stack.rs2 <- summary(a))
+# selection by adjr2 
+stack.rs2$which[which.max(stack.rs2$adjr2),]
+# selection by cp
+plot(2:4, stack.rs2$cp, xlab = 'No. of parameters', ylab = 'cp statistics')
+abline(0,1)
+```
+
+CP통계량과 adjr2 통계량 기준으로도 Acid.Conc. 변수 소거
+
+따라서 특이점을 제거하기 전과 후의 변수선택 결과는 같다.
+
+## Chap. 11 Insurance Redlining -- A Complete Example
+
+##### 11.1 Ecological Correlation
+
+```{r}
+data(eco)
+g <- lm(income~usborn, eco)
+summary(g)
+```
+
+위 회귀식을 통해 검증한 회귀모형은 다음과 같다.
+
+$$
+income = 68642 - 46019 \times usborn
+$$
+
+```{r}
+# drawing plots
+par(mfrow = c(1,2))
+# scatter plot
+plot(income ~ usborn, data = eco, xlab = 'Proportion US born', ylab = 'Mean annual income')
+# fitting a regression line
+plot(income~usborn, data = eco, xlab = 'Proportion US born', ylab = 'Mean annual income', xlim = c(0,1), ylim = c(15000, 70000), xaxs = 'i')
+abline(coef(g))
+```
+
+연평균 소득을 반응변수로 하고, 미국내 출생시민 비율을 설명변수로 하는 회귀모형을 산점도에 적합한 결과, 뚜렷하게 우하향하는 회귀선 근처로 관측치가 결집해있는 것을 알 수 있다.
+
+위 회귀모형에 따르면, 미국 내에서 출생한 시민의 예상소득은 68,642-46,019 = 22,623 달러이고, 귀화한 시민의 예상소득은 68,642원이 된다.
+
+하지만, 위 모형이 간과하는 전제는, "평균소득과 인구 중 미국 내 출생 시민의 비율의 관계는 독립적이다"라는 점이다. 하지만 이민자들은 주로 소득이 높은 지역에 와서 거주하기 때문에 전제가 성립할 수 없다.
+
+
+##### 11.2. Initial Data Analysis
+
+```{r}
+data(chredlin)
+summary(chredlin)
+
+```
+
+3분위수와 최댓값, 최소값 기준으로
+race 변수는 폭넓게 분산되어 있어 회귀분석에 적합한 데이터
+theft와 income은 최댓값 방향으로 꼬리가 긴 분포를 이루고 있음
+involact는 다수의 0값을 가지고 있어 회귀분석에 적합하지 않은 데이터
+
+```{r}
+par(mfrow = c(2,3))
+for (i in 1:6) stripchart(chredlin[,i], main = names(chredlin)[i], vertical = T, method = 'jitter')
+```
+
+데이터 분포를 시각화해서 표현
+
+```{r}
+pairs(chredlin)
+```
+
+변수 간 상관관계 확인
+fire - involact, fire - race, race - involact 간 강한 상관관계가 의심됨
+
+```{r}
+summary(lm(involact~race, chredlin))
+summary(lm(fire~race, chredlin))
+summary(lm(involact~fire, chredlin))
+```
+
+회귀분석 결과, 세 개의 변수쌍은 모두 변수 간 유의미한 상관관계가 있는 것으로 확인
+
+```{r}
+par(mfrow = c(1,3))
+plot(involact~race, chredlin)
+abline(lm(involact~race, chredlin))
+plot(fire~race, chredlin)
+abline(lm(fire~race, chredlin))
+plot(involact~fire, chredlin)
+abline(lm(involact~fire, chredlin))
+```
+
+race 변수는 모형에 포함
+income 변수는 로그화해서 모형에 포함
+
+
+##### 11.3 Initial Model and Diagnostics
+
+```{r}
+# full model
+g <- lm(involact ~ race + fire + theft + age + log(income), chredlin)
+summary(g)
+```
+
+```{r}
+# check the model assumptions
+plot(fitted(g), residuals(g), xlab = 'Fitted', ylab = 'Residuals')
+abline(h = 0)
+qqnorm(residuals(g))
+qqline(residuals(g))
+```
+
+involact 반응변수에 다수의 0값이 있기 때문에 잔차산점도에서 대각선으로 배치된 일군의 데이터값이 존재
+잔차산점도와 분위수대조표를 해석한 결과, 잔차에 체계적 편향은 없고 정규성 가정을 만족하는 것으로 보임
+
+
+```{r}
+# influence points
+gi <- influence(g)
+qqnorml(gi$coef[,4])
+halfnorm(cooks.distance(g))
+```
+쿡의 거리를 기준으로 6번과 24번 관측치가 영향점에 해당하는 것으로 의심
+
+```{r}
+range(rstudent(g))
+qt(.05/(47*2), 41)
+```
+
+표준화 잔차를 기준으로 특이점에 해당할만큼 
+
+
+
+
+> Reference
+* Drawing a plot of lm class using ggplot 
+https://stackoverflow.com/questions/36731027/how-can-i-plot-the-residuals-of-lm-with-ggplot
+* Fitting a regression model with multi-dimensional equation
+https://rstudio-pubs-static.s3.amazonaws.com/190997_40fa09db8e344b19b14a687ea5de914b.html
+* 회귀모형(김성수 등, 한국방송통신대학교 출판문화원, 2016)
