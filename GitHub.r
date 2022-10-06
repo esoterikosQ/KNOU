@@ -31,6 +31,7 @@ credentials::set_github_pat("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")
 # GSM - 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
 # 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
 # 20220902 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
+# 20221006 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
 
 ## or store it manually in '.Renviron':
 usethis::edit_r_environ()
