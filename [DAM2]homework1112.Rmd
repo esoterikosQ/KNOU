@@ -1,0 +1,335 @@
+---
+title: "Untitled"
+author: "SeungGyu Bak"
+date: "2022-12-01"
+output: word_document
+---
+
+### 13-1. 다음 기술이 타당하면 O 틀리면 X로 표시하시오.
+
+## (1) 고정효과 모수의 유의성 검정을 가능도비 검정법으로 할 때 제한가능도함수를 사용한다. X
+
+## (2) 변량절편모형에서 급내상관계수는 0과 1 사이의 값을 가진다. O
+
+## (3) 급내상관계수의 값이 클수록 급내 이질성은 증가한다. X
+
+## (4) 변량효과의 최량선형불편예측량(BLUP)를 고정효과로 가정하고 추정한 값보다 작게 추정하는 경향이 있다. O
+
+## (5) 변량효과 모형의 오차분포에 대한 진단에는 조건부 잔차보다 주변부 잔차를 사용하는 것이 합리적이다. X
+
+### 13-2.모수 추정치의 해석에서 용량군 간의 다중비교를 scheffe, bonferroni, sidak, dunnettx, tukey, mvt 방법으로 실시하고 결과들을 비교 설명하시오.
+
+```{r 2-1}
+# loading necessary packages
+library(WWGbook)
+library(nlme)
+
+# loading and preprocessing data
+data(ratpup)
+attach(ratpup)
+ratpup$sex1[sex == 'Female'] <- 1
+ratpup$sex1[sex == 'Male'] <- 0
+ratpup$trtgrp[treatment == 'Control'] <- 1
+ratpup$trtgrp[treatment == 'Low' | treatment == 'High'] <- 2
+attach(ratpup)
+
+# 최종모형
+model3.3.1.fit <- lme(weight ~ treatment + sex1 + litsize,
+                      random = ~ 1 | litter,
+                      method = 'REML',
+                      weights = varIdent(form = ~1 | trtgrp))
+
+```
+
+
+```{r 2-2}
+library(lsmeans)
+emmeans(model3.3.1.fit, pairwise~treatment, adjust = 'tukey')
+```
+
+```{r 2-3}
+lsmeans(model3.3.1.fit, pairwise~treatment, adjust = 'scheffe')
+```
+
+```{r 2-4}
+lsmeans(model3.3.1.fit, pairwise~treatment, adjust = 'Bonferroni')
+```
+
+```{r 2-5}
+lsmeans(model3.3.1.fit, pairwise~treatment, adjust = 'Sidak')
+```
+
+```{r 2-6}
+lsmeans(model3.3.1.fit, pairwise~treatment, adjust = 'Dunnettx')
+```
+
+```{r 2-7}
+lsmeans(model3.3.1.fit, pairwise~treatment, adjust = 'mvt')
+```
+
+
+### 13-3 12번째 어미쥐는 "Control"군에 노출되었고 11마리의 새끼를 생산하였다. 어미쥐에서 태어난 암컷 생쥐의 출생 체중에 대히여 모집단 평균 예측값과 특정개체 예측값을 구하시오.
+
+
+```{r 3-1}
+# 12번째 어미쥐(litter = 12), 노출(treatment = 'Control'), 11마리 새끼(litsize = 11), 암컷 새끼쥐(sex1 = 1)
+quest <- data.frame(treatment = 'Control', sex1 = 1, litsize = 11, litter = 12)
+predict(model3.3.1.fit, newdata = quest, level = c(0, 1))
+```
+
+
+### 13-4. R packaged에서 제공하는 Pearson-type 조건부 잔차를 사용하여 오차분포 가정에 대한 잔차진단을 실시하고 결과를 해석하시오.
+
+```{r 4-1}
+# Pearson 잔차 계산
+res <- residuals(model3.3.1.fit, type = 'pearson', level = c(0, 1))
+ratred <- data.frame(ratpup, res)
+
+# 히스토그램
+library(lattice)
+histogram(~litter.1 | factor(trtgrp), data = ratred, layout = c(2, 1), aspect = 2,
+          xlab = 'Residual', main = c('Control', 'Low+High'))
+
+```
+
+``` {r 4-2}
+# 정규 QQ plot
+qqnorm(model3.3.1.fit, ~residuals(., type = 'pearson') | factor(trtgrp), layout = c(2, 1),
+       aspect = 2, id = 0.05, main = c('Control', 'Low+High'))
+```
+
+```{r 4-3}
+# 조건부 예측값 vs 피어슨잔차 그림
+plot(model3.3.1.fit, residuals(., type = 'pearson') ~ fitted(.) | factor(trtgrp),
+     layout = c(2, 1), aspect = 2, abline = 0, main = c('Control', 'Low+High'))
+```
+
+14. 14강 강의록의 Part1에서 Part4까지 제시된 R 프로그램들을 직접 수행하고 결과를 정리하여 제출하시오.
+
+```{r 14-1}
+data(autism)
+attach(autism)
+```
+
+```{r 14-2}
+addmargins(table(sicdegp, age))
+```
+
+```{r 14-3}
+# 소통발달정도(sicdegp)*나이(age)별 사회화정도점수(vsae)의 분포
+library(Hmisc)
+g <- function(x) {
+  c(N=length(x), Mean = mean(x, na.rm = T), MEDIAN = median(x, na.rm = T), MIN = min(x, na.rm = T),
+    Q = quantile(x, probs=c(0.25, 0.75), na.rm = T), MAX = max(x, na.rm = T), SD = sd(x, na.rm = T),
+    options(digits=3))
+}
+
+summarize(vsae, by = llist(sicdegp, age), g)
+```
+
+```{r 14-4}
+## 소통발달정도*나이 별 사회화정도점수ㅡ이 boxplot
+# 소통발달정도와 나이에 대한 범주형 변수 생성
+sicdegp.f <- factor(sicdegp)
+age.f <- factor(age)
+
+# 생성된 범주형변수 기존 자료와 합치기
+autism.updated <- data.frame(autism, sicdegp.f, age.f)
+
+trellis.device(color = T)
+
+bwplot(vsae ~ age.f|sicdegp.f, aspect = 2, data = autism.updated, na.rm = T,
+       ylab = 'VSAE', xlab = 'Age', main = 'Boxplots of VSAE of levels of SICDEGP by Age')
+```
+
+```{r 14-5}
+## 소통발달정도 수준 별 나이에 따른 사회화정도점수 변화
+# 아이 별 나이에 따른 사회화정도점수 변화
+library(nlme)
+autism.g1 <- groupedData(vsae ~ age | childid, outer = ~sicdegp.f, data = autism.updated)
+plot(autism.g1, display = 'childid', outer = T, aspect = 2, key = F, 
+     xlab = 'Age(Years)', ylab = 'VSAE', main = 'Individual Data by SICD group')
+
+```
+
+```{r 14-6}
+# sicdegp 각 수준에서 나이에 따른 사회화정도점수 평균 변화
+autism.g2 <- groupedData(vsae ~ age | sicdegp, order.groups = F, data = autism.updated)
+plot(autism.g2, display = 'sicdegp', aspect = 2, key = F,
+     xlab = 'Age(Years)', ylab = 'VSAE', main = 'Mean Profiles by SICD Group')
+```
+
+```{r 14-7}
+### (나이-2) 변수 생성
+age.2 <- age - 2
+autism.updated <- subset(data.frame(autism.updated, age.2), !is.na(vsae))
+
+### 변량계수모형 분석 자료준비
+autism.grouped <- groupedData(vsae ~ age.2 | childid, data = autism.updated, order.groups = F)
+
+### 변량효과 구조 선택
+model.1.fit <- lme(vsae ~ age.2 + I(age.2^2) + sicdegp.f + age.2:sicdegp.f + I(age.2^2):sicdegp.f,
+                     random = ~ 1 + age.2 + I(age.2^2),
+                     method = 'REML',
+                     data = autism.grouped)
+summary(model.1.fit)
+```
+
+
+```{r 14-8}
+model.2.fit <- lme(vsae ~ age.2 + I(age.2^2) + sicdegp.f + age.2:sicdegp.f + I(age.2^2):sicdegp.f,
+                     random = ~ age.2 + I(age.2^2) - 1,
+                     method = 'REML',
+                     data = autism.grouped)
+summary(model.2.fit)
+```
+
+```{r 14-9}
+# 귀무가설 모형 적합과 결과
+model.2a.fit <- update(model.2.fit, random = ~ age.2 - 1)
+summary(model.2a.fit)
+```
+
+```{r 14-10}
+# (age2._ij)^2 변량계수에 대한 유의성 검정
+0.5*(1-pchisq(83.9, 1)) + 0.5*(1-pchisq(83.9, 2))
+```
+
+```{r 14-11}
+# 대립가설 모형
+model.2.ml.fit <- update(model.2.fit, method = 'ML')
+
+# 귀무가설 모형
+model.3.ml.fit <- update(model.2.ml.fit, fixed = ~ age.2 + I(age.2^2) + sicdegp.f + age.2:sicdegp.f)
+
+anova(model.2.ml.fit, model.3.ml.fit)
+```
+
+```{r 14-12}
+# age.2*sicdegp 유의성 검증
+model.3a.ml.fit <- update(model.3.ml.fit, fixed = ~ age.2 + I(age.2^2) + sicdegp.f)
+anova(model.3a.ml.fit, model.3.ml.fit)
+```
+
+```{r 14-13}
+## 최종 모형 적합
+model.3.fit <- lme(vsae ~ age.2 + I(age.2^2) + sicdegp.f + age.2:sicdegp.f,
+                    random = ~ age.2 + I(age.2^2) - 1,
+                    method = 'REML',
+                    data = autism.grouped)
+summary(model.3.fit)
+```
+
+
+```{r 14-14}
+# 고정효과 모수의 신뢰구간 추정
+intervals(model.3.fit)
+```
+
+```{r 14-15}
+# sicdegp 각 수준에서 추정된 age 영향곡선
+curve(0.11*x^2 + 6.15*x + 13.47, 0, 11, 
+      xlab = 'Age-2', ylab = 'hat E(Y_ij): Marginal Predicted VSAE',
+      lty = 3, ylim = c(0, 100), lwd = 2)
+curve(0.11*x^2 + 2.65*x + 9.84, 0, 11, add = T, lty = 2, lwd = 2)
+curve(0.11*x^2 + 2.08*x + 8.48, 0, 11, add = T, lty = 1, lwd = 2)
+legend(1, 90, c('SICDEGP = 1', 'SICDEGP = 2', 'SICDEGP = 3'), lty = c(1, 2, 3), lwd = c(2, 2, 2))
+```
+
+
+```{r 14-16}
+# 모형적합과 결과
+summary(model.3.fit)
+```
+
+
+```{r 14-17}
+intervals(model.3.fit)
+```
+
+
+
+```{r 14-18}
+### 주변부 공분산 행렬 추정치
+getVarCov(model.3.fit, individual = '1', type = 'marginal')
+```
+
+
+```{r 14-19}
+# 최량 선형 비편향 예측
+random.effects(model.3.fit)
+```
+
+```{r 14-20}
+plot(augPred(model.3.fit, level = 0:1), layout = c(4, 3, 1),
+     xlab = 'AGE - 2', ylab = 'Predicted VSAE',
+     key = list(lines = list(lty = c(1, 2), col = c(1, 1), lwd = c(1, 1)),
+                text = list(c('marginal mean profile', 'subject-specific profile')),
+                columns = 2))
+```
+
+```{r 14-21}
+### 잔차진단
+## 조건부 예측값 vs. 표준화 조건부 잔차 그림
+plot(model.3.fit, resid(., type = 'p') ~ fitted(.) | factor(sicdegp),
+     xlab = 'Conditional predicted values', layout = c(3, 1),
+     aspect = 2, abline = c(0, 2, -2), lty = c(1, 3, 3), id = 0.05)
+
+```
+
+```{r 14-22}
+## age.2 vs. 표준화 조건부 잔차 그림
+plot(model.3.fit, resid(., type = 'p') ~ age.2,
+     xlab = 'Age -2', aspect = 2,
+     abline = c(0, 2, -2), lty = c(1, 3, 3), id = 0.05)
+```
+
+```{r 14-23}
+## 표준화 조건부 잔차에 대한 Normal Q-Q plots
+qqnorm(model.3.fit, ~resid(., type = 'p') | factor(sicdegp),
+       layout = c(3, 1), aspect = 2, id = 0.05)
+```
+
+```{r 14-24}
+### 변량효과에 대한 진단
+## 변량효과에 대한 Normal Q-Q plots
+qqnorm(model.3.fit, ~ranef(.), id = 0.05)
+```
+
+```{r 14-25}
+## 변량효과 예측값들 간의 산점도
+pairs(model.3.fit, ~ranef(.) | factor(sicdegp), 
+      layout = c(3, 1), aspect = 2, id = 0.05)
+```
+
+
+```{r 14-26} 
+### 조건부 예측값 vs. 관측값
+plot(model.3.fit, vsae ~ fitted(.) | factor(sicdegp), id = 0.05,
+     layout = c(3, 1), xlab = 'Conditional predicted values', aspect = 2)
+```
+
+```{r 14-27}
+### 영향력 진단
+## 46번, 124번, 180번 아이의 영향력 진단
+autism.grouped2 <- autism.grouped[(autism.grouped$childid != 46 & autism.grouped$childid != 124
+                                  & autism.grouped$childid != 180),]
+model.3.fit.out <- update(model.3.fit, data = autism.grouped2)
+summary(model.3.fit.out)
+```
+
+``` {r 14-28}
+intervals(model.3.fit.out)
+intervals(model.3.fit)
+```
+
+
+
+
+
+
+
+
+
+
+

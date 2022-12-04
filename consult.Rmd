@@ -1,0 +1,250 @@
+---
+title: "Untitled"
+author: "SeungGyu Bak"
+date: "2022-12-04"
+output: html_document
+---
+
+```{r data}
+## data loading
+dt <- read.csv('result.csv', head = T, sep = ',')
+head(dt)
+
+# distinguish age
+dt$age.gr[dt$age < 30] <- 1
+dt$age.gr[dt$age >= 30 & dt$age < 40] <- 2
+dt$age.gr[dt$age >= 40 & dt$age < 50] <- 3
+dt$age.gr[dt$age >= 50] <- 4
+dt$age.gr <- factor(dt$age.gr, levels = c(1:4), labels = c('20s', '30s', '40s', '50s'))
+
+
+# reverse coding #12, #28, #29, #30
+dt$X12 <- 6 - dt$X12_rev
+dt[dt$X12 + dt$X12_rev != 6,]
+
+dt$X28 <- 6 - dt$X28_rev
+dt[dt$X28 + dt$X28_rev != 6,]
+
+dt$X29 <- 6 - dt$X29_rev
+dt[dt$X29 + dt$X29_rev != 6,]
+
+dt$X30 <- 6 - dt$X30_rev
+dt[dt$X30 + dt$X30_rev != 6,]
+
+
+# one-hot encoding # 13, #20
+dt$X13 <- dt$X13.1 + dt$X13.2 + dt$X13.3
+dt$X20 <- dt$X20.1 + dt$X20.2 + dt$X20.3
+
+summary(dt)
+
+# sum up partial integral
+# part1 -- recog, part2 -- sens, part3 -- comm, part4 -- eff
+recog <- dt$X8 + dt$X9 + dt$X10 + dt$X11 + dt$X12 + dt$X13 + dt$X14 + dt$X15 + dt$X16 + dt$X17 + dt$X18 + dt$X19 + dt$X20
+sens <- dt$X21 + dt$X22 + dt$X23 + dt$X24 + dt$X25 + dt$X26 + dt$X27
+comm <- dt$X28 + dt$X29 + dt$X30
+eff <- dt$X31 + dt$X32 + dt$X33 + dt$X34 + dt$X35
+
+# categorical factor #1, #2, #4
+region <- factor(dt$region, levels = c(1:4), labels = c('Seoul', 'Bucheon', 'Cheonan', 'Gumi'))
+
+# create dataset for descriptive exloring
+dt_des <- data.frame(region, dt[,c(2, 43, 4:10)], recog, sens, comm, eff)
+dt_des$X5 <- dt_des$X5.1 + dt_des$X5.2 + dt_des$X5.3
+summary(dt_des)
+
+```
+
+
+```{r contingency}
+library(dplyr)
+library(tidyr)
+
+# contingency tables
+# by region
+dt_des %>% 
+  select(region, recog, sens, comm, eff) %>% 
+  group_by(region) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by sex
+dt_des %>% 
+  select(sex, recog, sens, comm, eff) %>% 
+  group_by(sex) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by age
+dt_des %>% 
+  select(age.gr, recog, sens, comm, eff) %>% 
+  group_by(age.gr) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by occupation
+dt_des %>% 
+  select(occu, recog, sens, comm, eff) %>% 
+  group_by(occu) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by seniority
+dt_des %>% 
+  select(seniority, recog, sens, comm, eff) %>% 
+  group_by(seniority) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by foreigner count experience
+dt_des %>% 
+  select(multexp, recog, sens, comm, eff) %>% 
+  group_by(multexp) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by X5.1
+dt_des %>% 
+  select(X5.1, recog, sens, comm, eff) %>% 
+  group_by(X5.1) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by x5.2
+dt_des %>% 
+  select(X5.2, recog, sens, comm, eff) %>% 
+  group_by(X5.2) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by X5.3
+dt_des %>% 
+  select(X5.3, recog, sens, comm, eff) %>% 
+  group_by(X5.3) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+# by X5 overall
+dt_des %>% 
+  select(X5.1, X5.2, X5.3, recog, sens, comm, eff) %>% 
+  mutate(X5 = X5.1 + X5.2 + X5.3) %>%
+  group_by(X5) %>% 
+  summarise(mean_recog = mean(recog), mean_sens = mean(sens), mean_comm = mean(comm), mean_eff = mean(eff))
+
+
+```
+
+
+
+```{r boxplots}
+### 상자그림
+library(lattice)
+
+con_box <- function(x, y) {
+  par(mfrow = c(1, 4))
+  attach(y)
+  boxplot(recog~x, data = y)
+  boxplot(sens~x, data = y)
+  boxplot(comm~x, data = y)
+  boxplot(eff~x, data = y)
+  detach(y)
+}
+con_box(region, dt_des)
+con_box(sex, dt_des)
+con_box(age.gr, dt_des)
+con_box(seniority, dt_des)
+con_box(X5.1, dt_des)
+con_box(X5.2, dt_des)
+con_box(X5.3, dt_des)
+con_box(engpro, dt_des)
+con_box(multexp, dt_des)
+
+boxplot(recog~occu, data = dt_des)
+```
+
+``` {r independence}
+## 독립성 검정
+# recognition
+chisq.test(dt_des$recog, dt_des$region) # <0.1
+chisq.test(dt_des$recog, dt_des$age.gr)
+chisq.test(dt_des$recog, dt_des$sex)
+chisq.test(dt_des$recog, dt_des$occu) # <0.1
+chisq.test(dt_des$recog, dt_des$seniority)
+chisq.test(dt_des$recog, dt_des$engpro) # <0.01
+chisq.test(dt_des$recog, dt_des$multexp) # <0.05
+chisq.test(dt_des$recog, dt_des$X5.1)
+chisq.test(dt_des$recog, dt_des$X5.2) # <0.01
+chisq.test(dt_des$recog, dt_des$X5.3) # <0.1
+chisq.test(dt_des$recog, dt_des$X5) # <0.01
+
+# sensitivity
+chisq.test(dt_des$sens, dt_des$region)
+chisq.test(dt_des$sens, dt_des$age.gr)
+chisq.test(dt_des$sens, dt_des$sex)
+chisq.test(dt_des$sens, dt_des$occu)
+chisq.test(dt_des$sens, dt_des$seniority)
+chisq.test(dt_des$sens, dt_des$engpro) # <0.1
+chisq.test(dt_des$sens, dt_des$multexp) # <0.05
+chisq.test(dt_des$sens, dt_des$X5.1)
+chisq.test(dt_des$sens, dt_des$X5.2)
+chisq.test(dt_des$sens, dt_des$X5.3)
+chisq.test(dt_des$sens, dt_des$X5)
+
+# communication
+chisq.test(dt_des$comm, dt_des$region) # <0.05
+chisq.test(dt_des$comm, dt_des$age.gr)
+chisq.test(dt_des$comm, dt_des$sex)
+chisq.test(dt_des$comm, dt_des$occu) # <0.05
+chisq.test(dt_des$comm, dt_des$seniority) # <0.01
+chisq.test(dt_des$comm, dt_des$engpro) # <0.01
+chisq.test(dt_des$comm, dt_des$multexp)
+chisq.test(dt_des$comm, dt_des$X5.1)
+chisq.test(dt_des$comm, dt_des$X5.2) # <0.01
+chisq.test(dt_des$comm, dt_des$X5.3) # <0.05
+chisq.test(dt_des$comm, dt_des$X5) # <0.05
+
+# self-efficacy
+chisq.test(dt_des$eff, dt_des$region)
+chisq.test(dt_des$eff, dt_des$age.gr) # <0.01
+chisq.test(dt_des$eff, dt_des$sex) # <0.01
+chisq.test(dt_des$eff, dt_des$occu) # <0.1
+chisq.test(dt_des$eff, dt_des$seniority) # <0.1
+chisq.test(dt_des$eff, dt_des$engpro) # <0.01
+chisq.test(dt_des$eff, dt_des$multexp) # <0.01
+chisq.test(dt_des$eff, dt_des$X5.1) # <0.05
+chisq.test(dt_des$eff, dt_des$X5.2) # <0.01
+chisq.test(dt_des$eff, dt_des$X5.3) # <0.1
+chisq.test(dt_des$eff, dt_des$X5) # <0.05
+```
+
+|ind       |recog|sens|comm|eff |
+|----------|-----|----|----|----|
+|region    |<.1  |NA  |<.05|NA  |
+|sex       |NA   |NA  |NA  |<.01|
+|age       |NA   |NA  |NA  |<.01|
+|occu      |<.1  |NA  |<.05|<.1 |
+|seniority |NA   |NA  |<.01|<.1 |
+|english   |<.01 |<.1 |<.01|<.01|
+|experience|<.05 |<.05|NA  |<.01|
+|X5.1      |NA   |NA  |NA  |<.05|
+|X5.2      |<.01 |NA  |<.01|<.01|
+|X5.3      |<.1  |NA  |<.05|<.1 |
+|X5        |<.01 |NA  |<.05|<.05|
+
+
+
+```{r modelling1}
+## t1 multivariate multiple linear regression
+model.1 <- lm(cbind(recog, sens, comm, eff) ~ engpro + multexp + X5 + occu + region + seniority + age.gr + sex,
+              data = dt_des)
+summary(model.1)
+anova(model.1)
+```
+
+
+```{r modelling2}
+model.1.1 <- lm(cbind(recog, sens, comm, eff) ~ engpro + multexp + occu + age.gr + X5 + region + seniority + sex,
+              data = dt_des)
+anova(model.1.1)
+```
+
+```{r modelling3}
+## t2 multivariate multiple linear regression -- age as int
+dt_des_1 <- cbind(dt_des, dt$age)
+model.2 <- lm(cbind(recog, sens, comm, eff) ~ engpro + multexp + occu + dt$age + X5 + region + seniority + sex,
+              data = dt_des)
+anova(model.1.1, model.2)
+summary(model.2)
+```
+
