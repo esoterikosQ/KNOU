@@ -248,3 +248,70 @@ anova(model.1.1, model.2)
 summary(model.2)
 ```
 
+``` {r one-way}
+vars <- names(dt_des)[c(1:5, 9:10, 15)]
+res <- names(dt_des)[11:14]
+aov_one <- function(x, y) {
+  anova_coef <- data.frame(row.names = y)
+  for (i in 1:length(x)) {
+    rname = eval(parse(text = 'x[i]'))
+    c_result <- c()
+    for (j in 1:length(y)) {
+      ename = eval(parse(text = 'y[j]'))
+      fit_result <- aov(get(rname) ~ get(ename), data = dt_des)
+      p_result <- round(summary(fit_result)[[1]][['Pr(>F)']][[1]], 4)
+      c_result <- append(c_result, p_result)
+#      print(c_result)
+    }
+    anova_coef <- cbind(anova_coef, c_result)
+  }
+  colnames(anova_coef) <- x
+  return(anova_coef)
+}
+
+aov_des(res, vars)
+```
+
+```{r multi-way}
+aov_mult <- function(x, y) {
+  anova_coef <- data.frame(row.names = y)
+  for (i in 1:length(x)) {
+    rname = eval(parse(text = 'x[i]'))
+    fit_result <- aov(get(rname) ~ region + sex + age.gr + occu + seniority + engpro + multexp + X5
+                      , data = dt_des)
+    c_result <- round(summary(fit_result)[[1]][['Pr(>F)']][1:8], 4)
+    anova_coef <- cbind(anova_coef, c_result)
+  }
+  colnames(anova_coef) <- x
+  return(anova_coef)
+}
+
+aov_mult(res, vars)
+```
+
+
+``` {r post-hoc}
+library(emmeans)
+dt_des_post <- dt_des
+dt_des_post$sex <- as.factor(dt_des_post$sex)
+dt_des_post$occu <- as.factor(dt_des_post$occu)
+
+f_recog <- aov(recog ~ region + sex + age.gr + occu + seniority + engpro + multexp + X5, data = dt_des_post)
+f_sens <- aov(sens ~ region + sex + age.gr + occu + seniority + engpro + multexp + X5, data = dt_des_post)
+f_comm <- aov(comm ~ region + sex + age.gr + occu + seniority + engpro + multexp + X5, data = dt_des_post)
+f_eff <- aov(eff ~ region + sex + age.gr + occu + seniority + engpro + multexp + X5, data = dt_des_post)
+
+# recog
+emmeans(f_recog, pairwise ~ region, adjust = 'bonferroni')
+emmeans(f_recog, pairwise ~ occu, adjust = 'bonferroni')
+emmeans(f_recog, pairwise ~ age.gr, adjust = 'bonferroni')
+
+# sens
+emmeans(f_sens, pairwise ~ occu, adjust = 'bonferroni')
+
+# comm
+emmeans(f_comm, pairwise ~ occu, adjust = 'bonferroni')
+
+# eff
+emmeans(f_eff, pairwise ~ age.gr, adjust = 'bonferroni')
+```
