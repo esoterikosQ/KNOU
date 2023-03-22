@@ -230,7 +230,7 @@ https://rpago.tistory.com/59
 ```{r 4-1}
 # 결
 dt <- Hitters[complete.cases(Hitters),]
-
+dim(dt)
 
 ```
 
