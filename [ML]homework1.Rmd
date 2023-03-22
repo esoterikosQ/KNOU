@@ -206,9 +206,14 @@ import numpy as np
 import statsmodels.formula.api as sm
 
 dt = pd.read_csv('ML_2.csv')
+<<<<<<< HEAD
 reg_cement = sm.ols(formula = 'y ~ x1 + x2 + x3 + x4', data = dt).fit()
 print(reg_cement.summary())
 
+=======
+reg_cement = sm.ols('y ~ x1 + x2 + x3 + x4', data = dt).fit()
+print(reg_cement.summary())
+>>>>>>> 13db0d8e796f37fece85bd5a92d129b53ecc3d2b
 ```
 
 4. R패키지 ISLR에 있는 데이터셋 Hitters는 1986~1987년도 미국 메이저리그 타자 자료이다. 자료는 다음과 같다. 이 자료에서 salary를 종속변수로 한 모형을 적합하고자 한다.
