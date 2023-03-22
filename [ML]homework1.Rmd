@@ -7,6 +7,8 @@ date: "2023-03-19"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
+library(reticulate)
+library(glmnet)
 reticulate::use_condaenv('py4r')
 ```
 
@@ -204,7 +206,8 @@ import numpy as np
 import statsmodels.formula.api as sm
 
 dt = pd.read_csv('ML_2.csv')
-reg_cement = sm.ols(dt['y'], dt[:,-1]).fit()
+reg_cement = sm.ols(formula = 'y ~ x1 + x2 + x3 + x4', data = dt).fit()
+print(reg_cement.summary())
 
 ```
 
@@ -217,7 +220,12 @@ head(Hitters, 3)
 
 (1) R 시스템에서 먼저 결측치 자료를 없앤 후, ridge regression 및 lasso regression을 적합하고 결과를 해석하시오.
 
+https://rpago.tistory.com/59
+
 ```{r 4-1}
+# 결
+dt <- Hitters[complete.cases(Hitters),]
+
 
 ```
 
