@@ -207,7 +207,7 @@ reg_cement = sm.ols('y ~ x1 + x2 + x3 + x4', data = dt).fit()
 print(reg_cement.summary())
 ```
 
-4. R패키지 ISLR에 있는 데이터셋 Hitters는 1986~1987년도 미국 메이저리그 타자 자료이다. 자료는 다음과 같다. 이 자료에서 salary를 종속변수로 한 모형을 적합하고자 한다.
+4. R패키지 ISLR에 있는 데이터셋 Hitters는 1986~1987년도 미국 메이저리그 타자 자료이다. 자료는 다음과 같다. 이 자료에서 salary를 종속변수로 한 모형을 적합하고자 한다.  
 
 ```{r 4}
 library(ISLR)
