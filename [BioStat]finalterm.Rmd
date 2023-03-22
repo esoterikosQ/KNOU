@@ -1,0 +1,44 @@
+---
+title: "Untitled"
+author: "SeungGyu Bak"
+date: "2022-11-28"
+output: word_document
+---
+
+## 1.	R의 Survival 패키지에 내장된 Rotterdam 데이터셋에는 2982명의 유방암 환자에 대한 정보가 들어있다. 이 데이터셋을 이용하여 다음의 문항에 답하시오. 풀이에 사용한 R 코드와 출력결과를 답안에 포함하시오.
+
+### A.	아래의 R 코드를 실행하여 R에 데이터셋을 불러들이고 이 데이터셋에 대한 설명을 Help 창에 띄워 각 변수의 의미를 탐색하시오. (이 문항의 답안은 제출할 필요 없음.)
+
+```{r echo=FALSE}
+data(cancer, package="survival")
+?rotterdam
+```
+
+### B.	위의 A 문항에서 불러낸 Help 페이지의 Details 항목을 읽고, ‘재발’이라는 이벤트에 대한 time to event analysis를 할 때, 40번 환자와 같이 재발 이벤트가 censor된 시점보다 더 뒤에 사망 이벤트가 발생한 환자를 어떻게 처리해야하는 것이 바람직하다고 생각하는지 서술하시오. (정답 없음, 자신의 주장에 대한 근거를 명료하게 기술할 것) (3점)
+
+
+
+
+### C.	위의 B 문항에서 논한 재발 이벤트와 시점의 정의에 대한 문제를 무시하고 (사망에 대한 정보를 사용하지 않고) 재발에 대한 time-to-event analysis를 수행해보자. 변수 recur는 재발 여부를 나타내고, rtime은 재발 또는 마지막 관찰까지 걸린 시간(in days)을 나타낸다. 즉, recur의 값이 1인 환자는 재발까지 걸린 시간이 rtime에 기록되어있고, recur의 값이 0인 환자는, 마지막으로 재발하지 않았음을 확인할 때까지 걸린 시간이 rtime에 기록되어있다. 이 recur, rtime 변수를 사용하여, chemotherapy를 받은 환자와 받지 않은 환자의 Kaplan-Meier curve를 그리시오. Chemotherapy를 받은 환자와 받지 않은 환자의 time to recurrence를 비교하는 log-rank test를 수행하고 p-value를 구하시오. Chemotherapy 여부에 따라 재발까지 걸리는 시간이 다르다고 할 수 있는가? (9점)
+
+```{r 1-c}
+
+```
+
+
+### D.	위의 C 문항에서와 마찬가지로 사망에 대한 정보를 사용하지 않고 재발에 대한 Cox proportional hazards regression을 수행해보자. Time to recurrence를 종속변수로, size와 chemo를 독립변수로 하여 Cox PH regression을 수행한 결과를 바탕으로 recurrence에 대한 chemo의 HR(hazards ratio)의 추정값을 구하고 해석하시오. (6점)
+
+```{r 1-d}
+
+```
+
+
+## 2. New England journal of medicine, Lancet, 또는 Journal of American medical association에 출판된 논문 중 로지스틱 회귀분석 또는 콕스 회귀분석을 주요 분석으로 사용한 연구논문을 자유롭게 하나 선택하여 아래의 질문에 답하시오. (선택한 저널도 같이 제출하시오.)
+
+### 연구 질문(research question)은 무엇인가?(3점)
+
+### B.	주요 종속변수(결과변수)와 주요 독립변수(설명변수)는 무엇인가? (3점)
+
+### 주요 종속변수와 주요 독립변수의 관계를 사용하는 OR 또는 HR의 추정값은 얼마인가? (3점)
+
+### D.	위의 C 문항에서 구한 OR 또는 HR 값을 해석하고 그에 대한 이 연구논문의 결론을 요약하시오. (3점)

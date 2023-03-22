@@ -32,7 +32,13 @@ credentials::set_github_pat("")
 # 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
 # 20220902 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
 # 20221006 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
+<<<<<<< HEAD
 
+=======
+# 20221016 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
+# 20221102 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
+# 20221204 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
+>>>>>>> 45d7db18e38a456363de119fa65d780c69b7955f
 ## or store it manually in '.Renviron':
 usethis::edit_r_environ()
 ## store your personal access token with: GITHUB_PAT=xxxyyyzzz

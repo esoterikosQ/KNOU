@@ -1,0 +1,201 @@
+---
+title: "Untitled"
+author: "SeungGyu Bak"
+date: "2022-11-18"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 11-1. 변량절편 모형을 개별 관측값 표현식 및 행렬표현식으로 기술하라.
+
+선형혼합모형(linear mixed-effects model, LMEM)이란 선형모형 중 모수가 다른 인자에 따라 변화하는 통계 모형을 뜻한다. 선형혼합모형의 연구 대상인 반응변수는 종속변수의 변화에 따라 변화하는 효과를 의미하는 고정효과(fixed effects)와 변량인자(random factors)에 따라 변화하는 효과를 의미하는 변량효과(random effects)의 혼합에 따라 증감하게 된다. 이때 변량효과는 절편, 기울기(선형회귀모형에서 회귀계수) 두 가지에 미칠 수 있게 되는데, 변량효과가 모형의 절편에 영향을 미치는 모형을 변량절편모형(random intercept model)이라고 한다. 선형혼합모형을 적합하여 관측 데이터를 분석하는 경우, 모형의 설정 단계에서 변량절편모형이 적절한지를 우도비 검정을 통해서 검정하게 된다.
+  
+변량절편모형을 식으로 나타내면 다음과 같다.
+
+$$
+Y_{ti} = \beta_1 X_{ti}^{(1)} + ... + \beta_{p} X_{ti}^{(p)} + u_{1i}Z_{ti}^{(1)} + ... + u_{qi}Z_{ti}^{(q)} + \epsilon_{ti}
+$$
+$$
+i = 1, 2, ..., m t = 1, 2, ..., n_i
+$$
+
+$$
+\epsilon_{ti} \sim N(0, \sigma_{k}^2)
+$$
+$$
+\sigma_1^2 \ne \sigma_2^2 \ne ... \ne \sigma_k^2
+$$
+
+위와 같은 변량절편모형은 설명변수(독립변수)가 여러 개인 경우 아래와 같은 행렬식으로 나타낼 수 있다. 
+
+$$
+Y_i = X_i\beta + Z_iu_i + \epsilon_i 
+i = 1, 2, ..., m 
+u_i \sim N(0, D)
+\epsilon_i \sim N(0, R_i)
+R_i = Var(\epsilon_i) 
+R_{k1} \ne R_{k2} (if \ k1 \ne k2)
+$$
+
+이때 각 행렬변수의 차원은 $Y_i$는 ($n_i \times 1$), $X_i$는 ($n_i \times p$), $\beta$는 ($p \times 1$), $Z_i$는 ($n_i \times q$), $u_i$는 ($q \times 1$), $\epsilon_i$은 ($n_i \times 1$)이다.
+
+
+## 11-2. 변량효과 검정법을 요약하라.
+  
+변량효과의 유의성은 변량효과를 나타내는 $u_i$의 분산이 0인지 여부를 우도비 검정 방법으로 가설검정함으로써 검정할 수 있다. 이때의 귀무가설과 대립가설은 다음과 같다.
+
+$$
+H_0 : D = 0 H_1 : D > 0
+$$
+
+우도비 검정을 위해 최대우도함수를 이용하여 추정치를 계산하는 경우 회귀모수($\beta$) 추정으로 인해 정보의 손실(자유도 감소)이 발생한다. 이 때문에 분산-공분산 모수($\theta$)를 하향추정하고 $\hat{\beta}$의 분산-공분산 행렬 추정에 편의가 발생한다. 이 때문에 최대우도함수 대신 자유도 감소로 인한 정보 손실을 보정하는 항이 포함된 제한최대우도함수를 이용하여 모수를 추정한다.
+
+가설검정을 위해 귀무가설과 대립가설에서 구한 제한최대우도값의 비율을 이용한 F검정을 하게 되는데, 이때의 검정은 설정한 모형에서 $u_i$를 포함하는 것이 적절한지를 검정하는 Type III F검정을 실시한다. 검정통계량은 $LR = -2log(\frac{L_{H_0}}{L_{H_1}})$로 해당 통계량이 df=1인 $\chi^2$ 분포에 근사하는 점을 이용해서 p값을 구한 후 유의수준과 비교하여 귀무가설 기각여부를 결정하게 된다.
+
+
+## 12-1. 생쥐의 출생체중 자료분석에서 모형1과 모형3을 제한최대우도 검정법으로 비교하고자 한다. 다음 물음에 답하시오.
+
+a) 모형1과 모형3을 기술하시오.
+
+<모형1>
+
+모형1의 모형식은 다음과 같다.
+$$
+Y_{ij} = \beta_0 + \beta_1Tr1_j + \beta_2Tr2_j + \beta_3Sexf_{ij} + \beta_4Litsize_j +\beta_5Tr1_j\times Sexf_{ij} + \beta_6tr2_j\times Sexf_{ij} + u_j + \epsilon_{ij}
+$$
+이때 랜덤효과와 오차를 나타내는 항의 분포는 다음과 같이 표현된다. 
+
+$$
+u_j \sim ^{iid}N(0, \sigma_{litter}^2)
+\epsilon_{ij} \sim ^{iid}N(0, \sigma^2)
+Cov(u_j, \epsilon_{ij}) = 0
+$$
+
+<모형3>
+
+모형3의 모형식은 모형1과 같다. 다만, 랜덤효과와 오차항의 분포가 다음과 같이 기술된다.
+
+$$
+u_j \sim ^{iid}N(0, \sigma_{litter}^2) 
+High/Low : \epsilon_{ij} \sim ^{iid}N(0, \sigma^2_{h/l})
+Control : \epsilon_{ij} \sim ^{iid}N(0, \sigma^2_c)
+Cov(u_j, \epsilon_{ij}) = 0
+$$
+
+b) 모형1과 모형3을 비교하는 가설과 제한가능도비 검정통계량을 기술하고 검정통계량의 분포를 제시하시오.
+
+< 가설 >
+$$
+H_0 : \sigma_{h/l}^2 = \sigma_c^2 = \sigma^2
+H_1 : not\ H_0
+$$
+< 검정통계량과 분포 >
+
+$$
+LR = -2log(\frac{L_{H_0}}{L_{H_1}}) \approx ^{H_0}\chi^2(1)
+$$
+
+c) 제한가능도비 검정통계량의 관측값을 제시하고, 유의확률을 구하고 유의수준 5%에서 검정결과를 기술하시오.
+
+```{r}
+# loading necessary packages
+library(WWGbook); library(nlme)
+
+# loading and preprocessing data
+data(ratpup)
+attach(ratpup)
+ratpup$sex1[sex == 'Female'] <- 1
+ratpup$sex1[sex == 'Male'] <- 0
+ratpup$trtgrp[treatment == 'Control'] <- 1
+ratpup$trtgrp[treatment == 'Low' | treatment == 'High'] <- 2
+attach(ratpup)
+
+# fitting models
+# model 1
+model1.fit <- lme(weight ~ treatment + sex1 + litsize + treatment*sex1, random = ~1 | litter, method = 'REML')
+# model3
+model3.fit <- lme(weight ~ treatment + sex1 + litsize + treatment*sex1, random = ~1 | litter, method = 'REML',
+                  weights = varIdent(form = ~1 | trtgrp))
+
+# type 3 f-test
+anova(model1.fit, model3.fit)
+```
+
+위 검정결과를 바탕으로 검정통계량을 계산하면 다음과 같다.
+
+$$
+LR = -2log(\frac{L_{H_0}}{L_{H_1}}) = -2\times(-200.5522) +2\times(-180.5404) = 401.1044 - 361.0808 = 40.0236
+$$
+df=1인 카이제곱 분포 하에서 위 통계량보다 극단적인 값을 가질 확률은 <0.0001로, 유의수준 0.05에서 귀무가설을 기각할 수 있다. 즉, model1을 기각하고 model3을 최종 분산구조로 선택한다.
+
+```{r}
+1 - pchisq(40.0236, 1)
+```
+
+
+## 12-2. Model 3.1에 대하여 다음 물음에 답하시오.
+
+a) Model 3.1을 기술하시오.
+
+생쥐 실험에서 model 3.1은 교호작용항을 제거하여 간결성을 높인 모형으로 다음 식으로 표현된다.
+
+$$
+Y_{ij} = \beta_0 + \beta_1Tr1_j + \beta_2Tr2_j + \beta_3Sexf_{ij} + \beta_4Litsize_j
++ u_j + \epsilon_{ij}
+$$
+
+분산구조는 model3과 같다.
+
+$$
+u_j \sim ^{iid}N(0, \sigma_{litter}^2)
+High/Low : \epsilon_{ij} \sim ^{iid}N(0, \sigma^2_{h/l})
+Control : \epsilon_{ij} \sim ^{iid}N(0, \sigma^2_c)
+Cov(u_j, \epsilon_{ij}) = 0
+$$
+
+
+b) treatment(용량군)의 유의성을 Type III F검정을 사용하여 검정하시오. 이때 귀무가설과 대립가설은 무엇인가?
+
+$$
+H_0 : \beta_1 = \beta_2 = 0
+H_1 : \beta_1 \ne 0 \ or \ \beta_2 \ne 0
+$$
+
+```{r}
+model3.1.fit <- lme(weight ~ sex1 + litsize + treatment, random = ~1 | litter, method = 'REML', 
+                    weights = varIdent(form = ~1 | trtgrp))
+anova(model3.1.fit)
+```
+  
+모형의 Type III F검정을 위해 변수의 순서를 바꿔 treatment를 가장 마지막 변수로 입력한다. 그리고 해당 모형에 대해 anova()함수를 입력하면 각 변수를 추가했을 때의 F검정값이 나타나는데, treatment 변수를 sex와 litsize 변수에 추가했을 때의 F통계량값을 기준으로 p값은 0.0004인 것을 알 수 있다. 따라서 유의수준 0.05에서 귀무가설을 기각하고 treatment 변수는 생쥐의 출생체중에 유의미하게 영향을 미친다고 결론내릴 수 있다.
+
+
+c) sex(성)의 유의성을 Type III F검정을 사용하여 검정하시오. 이 때 귀무가설과 대립가설은 무엇인가?
+
+sex의 유의성 검정을 위한 가설은 다음과 같다.
+
+$$
+H_0 : \beta_3 = 0
+H_1 : \beta_3 \ne 0
+$$
+
+위 가설을 검정하기 위해 sex변수를 제외한 귀무모형을 설정하여 가능도비 검정을 한 결과는 다음과 같다. 이때, sex 변수는 고정효과변수이므로  제한최대우도함수가 아닌 최대우도함수를 이용하여 모형을 적합한다.
+
+$$
+Y_{ij} = \beta_0 + \beta_1Tr1_j + \beta_2Tr2_j + \beta_4Litsize_j
++ u_j + \epsilon_{ij}
+$$
+
+
+```{r}
+model3.1.ml <- lme(weight ~ treatment + sex1 + litsize, random = ~1 | litter, method = 'ML', 
+                   weights = varIdent(form = ~1 | trtgrp))
+model3.1.0.ml <- lme(weight ~ treatment + litsize, random = ~1 | litter, method = 'ML', 
+                   weights = varIdent(form = ~1 | trtgrp))
+anova(model3.1.0.ml, model3.1.ml)
+```
+
+검정결과 검정통계량은 $-2 \times (-198.2851) + 2 \times (-168.8867) = 58.7968$이고 df = 1이다. 자유도가 1인 카이제곱분포에서 해당 통계량보다 극단적인 값을 가질 p값은 <0.0001로, 유의수준 0.05에서 귀무가설을 기각할 수 있다. 따라서 sex변수는 생쥐의 출생체중에 유의미한 영향을 미친다고 결론내릴 수 있다.
