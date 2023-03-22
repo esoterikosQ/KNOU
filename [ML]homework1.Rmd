@@ -226,6 +226,7 @@ head(Hitters, 3)
 (1) R 시스템에서 먼저 결측치 자료를 없앤 후, ridge regression 및 lasso regression을 적합하고 결과를 해석하시오.
 
 https://rpago.tistory.com/59
+https://analysisbugs.tistory.com/199
 
 ```{r 4-1}
 # 결
