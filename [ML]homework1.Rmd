@@ -7,6 +7,9 @@ date: "2023-03-19"
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
+library(reticulate)
+library(glmnet)
+reticulate::use_condaenv('py4r')
 ```
 
 ## 1. R과 파이썬의 사용에 관한 다음 물음에 답하시오.
@@ -203,8 +206,14 @@ import numpy as np
 import statsmodels.formula.api as sm
 
 dt = pd.read_csv('ML_2.csv')
+<<<<<<< HEAD
+reg_cement = sm.ols(formula = 'y ~ x1 + x2 + x3 + x4', data = dt).fit()
+print(reg_cement.summary())
+
+=======
 reg_cement = sm.ols('y ~ x1 + x2 + x3 + x4', data = dt).fit()
 print(reg_cement.summary())
+>>>>>>> 13db0d8e796f37fece85bd5a92d129b53ecc3d2b
 ```
 
 4. R패키지 ISLR에 있는 데이터셋 Hitters는 1986~1987년도 미국 메이저리그 타자 자료이다. 자료는 다음과 같다. 이 자료에서 salary를 종속변수로 한 모형을 적합하고자 한다.  
@@ -216,7 +225,13 @@ head(Hitters, 3)
 
 (1) R 시스템에서 먼저 결측치 자료를 없앤 후, ridge regression 및 lasso regression을 적합하고 결과를 해석하시오.
 
+https://rpago.tistory.com/59
+https://analysisbugs.tistory.com/199
+
 ```{r 4-1}
+# 결
+dt <- Hitters[complete.cases(Hitters),]
+dim(dt)
 
 ```
 

@@ -7,8 +7,11 @@ output: word_document
 
 ```{r setup, include=FALSE}
 library(gam)
+<<<<<<< HEAD
+=======
 library(mfx)
 library(pROC)
+>>>>>>> 45d7db18e38a456363de119fa65d780c69b7955f
 ```
 
 ## 1. 4강 과제에서 사용한 crab 자료를 이용하여 무게(x)를 예측변수로 사용하여 부수체(y=1) 확률에 대한 로지스틱 회귀모형을 적합하라.
@@ -36,16 +39,58 @@ $$
 이때, 선형근사를 통해 중량이 1kg 증가할 때 P(Y=1)의 변화를 구하면 다음과 같다.
 
 $$
+<<<<<<< HEAD
+\beta \pi(x)[1-\pi(x)] = 1.8151 \times 0.6745 \times 0.3255 = 0.3985
+=======
 \hat \beta \hat \pi(x)[1-\hat \pi(x)] = 1.8151 \times 0.6745 \times 0.3255 = 0.3985
+>>>>>>> 45d7db18e38a456363de119fa65d780c69b7955f
 $$
   
 이때 중량이 0.1kg 증가하면 P(Y=1) 값은 0.0399만큼 증가하게 된다. 따라서, 선형근사를 바탕으로 추정했을 때에 투구게의 평균중량 2.437kg에서 중량이 0.1kg 증가하면 부수체를 가질 확률은 약 0.4% 증가할 것이라고 예측할 수 있다.
   
+<<<<<<< HEAD
+한편, 무게가 0.58kg인 개체의 P(Y=1)값을 추정하면 $\hat \pi_i = 0.0665$이다. 이때 표준편차는 $SE = \sqrt{\hat \pi(1-\hat \pi)/n} = 0.0173$으로 개체중량 평균치 2.437kg일 때의 표준편차 0.0332보다 
+
+=======
 같은 추정치를 1표준편차만큼의 중량(0.58kg) 변화 효과로 해석하면, 중량이 0.58kg 증가할 때 P(Y=1) 값은 $0.3985 \times 0.58 = 0.2311$만큼 증가한다. 따라서, 주어진 표본에서 평균값을 기준으로 1표준편차만큼 중량이 변화하는 경우 부수체를 가질 확률이 약 23% 증가할 것이라고 예측할 수 있다.
+>>>>>>> 45d7db18e38a456363de119fa65d780c69b7955f
 
 
 ### b. 무게가 0.10kg 증가에 따른 무게의 평균주변효과를 구하여 그 결과를 해석하라.
 
+<<<<<<< HEAD
+4.5.2
+
+
+### c. y=1인 표본비율을 분계점으로 사용하여 분류표를 만들어라. 민감도와 특이도를 구하고 그 값을 해석하라.
+
+4.6.1
+
+
+### d. ROC 곡선을 구하고 AUC를 구하여 결과를 해석하라.
+
+4.6.2
+
+## 2. 사례-대조 연구관련 논문을 읽고 A4용지 1~2 페이지 국문으로 정리
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+=======
 ```{r 1-b}
 predict(fit, data.frame(weight=quantile(dt$width)))
 logitmfx(fit, atmean=FALSE, data=dt)
@@ -105,3 +150,4 @@ auc(roc.plot)
 
 ## 2. 사례-대조 연구관련 논문을 읽고 A4용지 1~2 페이지 국문으로 정리
 
+>>>>>>> 45d7db18e38a456363de119fa65d780c69b7955f
