@@ -1,0 +1,33 @@
+---
+title: "Untitled"
+output: word_document
+date: "2023-05-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. 비만치료제 효과 비교
+
+```{r}
+power.prop.test(p1 = 0.2, p2 = 0.35, power = 0.9)
+
+# LTF 반영
+# 독립2표본
+ceiling(185/(1-0.2))*2 # 464명
+
+# 대응2표본
+ceiling(185/(1-0.2)) # 232명
+```
+
+## 2. 수술방법 합병증 비교
+
+$$z_{\beta} = \frac{-z_{\alpha/2}\sqrt{2\bar{p}(1-\bar{p})}\pm\sqrt{n(p_2-p_1)^2}}{\sqrt{p_1(1-p_1) + p_0(1-p_0)}}$$
+
+$$n = \frac{(z_{\alpha/2}\sqrt{2\bar{p}(1-\bar{p})} - z_{\beta}\sqrt{p_1(1-p_1) + p_0(1-p_0)})^2}{(p_1-p_0)^2}$$
+
+```{r}
+# alpha = 0.05, n = 200, p1 = 0.2, p2 = 0.1
+power.prop.test(p1 = 0.2, p2 = 0.1, n = 200) # power = 0.8, beta = 0.2
+```

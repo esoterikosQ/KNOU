@@ -9,7 +9,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(reticulate)
 library(glmnet)
-reticulate::use_condaenv('py4r')
+library(ISLR)
+#reticulate::use_condaenv('py4r')
 ```
 
 ## 1. R과 파이썬의 사용에 관한 다음 물음에 답하시오.
@@ -219,8 +220,8 @@ print(reg_cement.summary())
 4. R패키지 ISLR에 있는 데이터셋 Hitters는 1986~1987년도 미국 메이저리그 타자 자료이다. 자료는 다음과 같다. 이 자료에서 salary를 종속변수로 한 모형을 적합하고자 한다.  
 
 ```{r 4}
-library(ISLR)
-head(Hitters, 3)
+dim(Hitters)
+head(Hitters)
 ```
 
 (1) R 시스템에서 먼저 결측치 자료를 없앤 후, ridge regression 및 lasso regression을 적합하고 결과를 해석하시오.
@@ -229,9 +230,17 @@ https://rpago.tistory.com/59
 https://analysisbugs.tistory.com/199
 
 ```{r 4-1}
-# 결
+# 결측치 제거
 dt <- Hitters[complete.cases(Hitters),]
-dim(dt)
+
+# ridge regression
+X <- model.matrix(Salary~., dt)[,-1]
+Y <- dt$Salary
+param <- 10^seq(10, -2, length = 100)
+model_ridge <- glmnet(X, Y, alpha = 0, lambda = param)
+dim(coef(model_ridge))
+
+plot(model_ridge)
 
 ```
 
