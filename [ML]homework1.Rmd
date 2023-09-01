@@ -206,14 +206,13 @@ import numpy as np
 import statsmodels.formula.api as sm
 
 dt = pd.read_csv('ML_2.csv')
-#<<<<<<< HEAD
+
 reg_cement = sm.ols(formula = 'y ~ x1 + x2 + x3 + x4', data = dt).fit()
 print(reg_cement.summary())
 
-#=======
+
 reg_cement = sm.ols('y ~ x1 + x2 + x3 + x4', data = dt).fit()
 print(reg_cement.summary())
-#>>>>>>> 13db0d8e796f37fece85bd5a92d129b53ecc3d2b
 ```
 
 4. R패키지 ISLR에 있는 데이터셋 Hitters는 1986~1987년도 미국 메이저리그 타자 자료이다. 자료는 다음과 같다. 이 자료에서 salary를 종속변수로 한 모형을 적합하고자 한다.
@@ -277,7 +276,6 @@ mean((best_ridge_hat - y[-train_idx])**2) # estimated MSE = 115115.2
 ## final model
 model_ridge_final <- glmnet(X, y, alpha = 0)
 coef_ridge <- predict(model_ridge_final, s = best_lambda, type = 'coefficients')
-coef_ridge
 ```
 
 
@@ -300,7 +298,6 @@ mean((best_lasso_hat - y[-train_idx])**2) # estimated MSE = 118056.6
 ## final model
 model_lasso_final <- glmnet(X, y, alpha = 1)
 coef_lasso <- predict(model_lasso_final, s = best_lambda, type = 'coefficients')
-coef_lasso
 ```
 
 ```{r 4-1-6 comparison}
@@ -313,8 +310,6 @@ coef_comp
 
 ```{python 4-2-1 preprocessing}
 # import necessary packages
-import numpy as np
-import pandas as pd
 import os
 from sklearn.preprocessing import MinMaxScaler
 import sklearn.linear_model as lm
@@ -326,9 +321,6 @@ dt = pd.read_csv('ML_3.csv')
 # divide explain and response variables
 X = dt.iloc[:, dt.columns != 'Salary']
 y = dt.iloc[:, dt.columns == 'Salary']
-
-# preprocessing : convert categorical to integer
-X.convert_dtypes().dtypes
 
 ## league
 X['League'] = X.League.astype('category').cat.codes
@@ -509,13 +501,28 @@ from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
+# preprocessing + normalization
 dt = pd.read_csv('deug.csv')
 dt['result_idx'] = dt['result'].replace({'A+': 5, 'A':4, 'B':3, 'B-':2, 'C-':1, 'D':0})
 dt.iloc[:, 0:8] = StandardScaler().fit_transform(dt.iloc[:, 0:8])
 
+# pca fitting
 pca = dec.PCA(4)
 projected = pca.fit_transform(dt.iloc[:,0:8])
 
+# result stats
+pca.explained_variance_ratio_
+np.round(pca.components_, 3)
+
+# scree plot
+plt.title('Scree Plot')
+plt.xlabel('Components')
+plt.ylabel('Explained Variance')
+plt.plot(pca.explained_variance_, 'o-')
+plt.show()
+
+
+# scatter plot
 plt.scatter(x = projected[:, 0], y = projected[:, 1],
            c = dt['result_idx'], edgecolor = 'none', alpha = 0.5,
            cmap = 'Spectral_r') #
@@ -560,12 +567,24 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 dt = pd.read_csv('(ml)crime.csv')
-#dt['result_idx'] = dt['result'].replace({'A+': 5, 'A':4, 'B':3, 'B-':2, 'C-':1, 'D':0})
 dt.iloc[:, 1:4] = StandardScaler().fit_transform(dt.iloc[:, 1:4])
 
+# fitting
 pca = dec.PCA(2)
 projected = pca.fit_transform(dt.iloc[:,1:4])
 
+# result stats
+pca.explained_variance_ratio_
+np.round(pca.components_, 3)
+
+# scree plot
+plt.title('Scree Plot')
+plt.xlabel('Components')
+plt.ylabel('Explained Variance')
+plt.plot(pca.explained_variance_, 'o-')
+plt.show()
+
+# scatter plot
 plt.scatter(x = projected[:, 0], y = projected[:, 1])
 
 for i in range(len(dt)):
